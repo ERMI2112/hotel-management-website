@@ -1,0 +1,65 @@
+### Test Booking API - Simple 2-night stay
+### This file can be used with VS Code REST Client extension or similar tools
+
+### 1. Login first to get token
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@hotel.com",
+  "password": "admin123"
+}
+
+### 2. Create a test room (requires token from step 1)
+POST http://localhost:5000/api/rooms
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "roomNumber": "101",
+  "type": "single",
+  "pricePerNight": 1200
+}
+
+### 3. Test booking: 2-night stay (CORRECT ISO FORMAT)
+### Expected: 2 nights × 1200 = 2400 ETB
+POST http://localhost:5000/api/bookings
+Content-Type: application/json
+
+{
+  "roomId": "YOUR_ROOM_ID_HERE",
+  "guestName": "Test Guest",
+  "guestPhone": "+251911223344",
+  "checkIn": "2026-07-01",
+  "checkOut": "2026-07-03"
+}
+
+### 4. Test booking: 1-week stay (ISO FORMAT)
+### Expected: 7 nights × 1200 = 8400 ETB
+POST http://localhost:5000/api/bookings
+Content-Type: application/json
+
+{
+  "roomId": "YOUR_ROOM_ID_HERE",
+  "guestName": "Week Stay Guest",
+  "guestPhone": "+251922334455",
+  "checkIn": "2026-07-10",
+  "checkOut": "2026-07-17"
+}
+
+### 5. Test with wrong date format (SHOULD FAIL)
+### This will be rejected by validation
+POST http://localhost:5000/api/bookings
+Content-Type: application/json
+
+{
+  "roomId": "YOUR_ROOM_ID_HERE",
+  "guestName": "Wrong Format Guest",
+  "guestPhone": "+251933445566",
+  "checkIn": "7/1/2026",
+  "checkOut": "7/3/2026"
+}
+
+### 6. Get all bookings (to verify calculation)
+GET http://localhost:5000/api/bookings
+Authorization: Bearer YOUR_TOKEN_HERE

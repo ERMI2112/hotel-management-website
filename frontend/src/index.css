@@ -1,0 +1,239 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #0f1420;
+    color: #f1f3f9;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a2035;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #404d68;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #5a6785;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface-900/60 backdrop-blur-xl border border-surface-700/40 rounded-2xl shadow-glass;
+  }
+
+  .glass-card-light {
+    @apply bg-surface-800/40 backdrop-blur-lg border border-surface-700/30 rounded-xl shadow-glass-sm;
+  }
+
+  .btn-primary {
+    @apply px-6 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl font-medium
+    hover:from-primary-500 hover:to-primary-600 hover:shadow-glow
+    active:scale-[0.98] transition-all duration-200 ease-out;
+  }
+
+  .btn-accent {
+    @apply px-6 py-2.5 bg-gradient-to-r from-accent-500 to-accent-600 text-white rounded-xl font-medium
+    hover:from-accent-400 hover:to-accent-500 hover:shadow-glow-accent
+    active:scale-[0.98] transition-all duration-200 ease-out;
+  }
+
+  .btn-ghost {
+    @apply px-6 py-2.5 bg-transparent border border-surface-600 text-surface-300 rounded-xl font-medium
+    hover:bg-surface-800 hover:border-surface-500 hover:text-white
+    active:scale-[0.98] transition-all duration-200 ease-out;
+  }
+
+  .btn-danger {
+    @apply px-6 py-2.5 bg-gradient-to-r from-danger-500 to-danger-600 text-white rounded-xl font-medium
+    hover:from-red-400 hover:to-red-500 hover:shadow-lg
+    active:scale-[0.98] transition-all duration-200 ease-out;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-surface-800/60 border border-surface-700/50 rounded-xl text-surface-100
+    placeholder:text-surface-500 focus:outline-none focus:border-primary-500/60 focus:ring-2 focus:ring-primary-500/20
+    transition-all duration-200;
+  }
+
+  .select-field {
+    @apply w-full px-4 py-3 bg-surface-800/60 border border-surface-700/50 rounded-xl text-surface-100
+    focus:outline-none focus:border-primary-500/60 focus:ring-2 focus:ring-primary-500/20
+    transition-all duration-200 appearance-none cursor-pointer;
+  }
+
+  .label-text {
+    @apply block text-sm font-medium text-surface-400 mb-1.5;
+  }
+
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .status-available {
+    @apply status-badge bg-success-500/15 text-green-400 border border-green-500/30;
+  }
+
+  .status-occupied {
+    @apply status-badge bg-primary-500/15 text-primary-300 border border-primary-500/30;
+  }
+
+  .status-maintenance {
+    @apply status-badge bg-warning-500/15 text-amber-400 border border-amber-500/30;
+  }
+
+  .status-confirmed {
+    @apply status-badge bg-success-500/15 text-green-400 border border-green-500/30;
+  }
+
+  .status-cancelled {
+    @apply status-badge bg-danger-500/15 text-red-400 border border-red-500/30;
+  }
+
+  .status-checked_out {
+    @apply status-badge bg-surface-500/15 text-surface-400 border border-surface-500/30;
+  }
+
+  .table-header {
+    @apply px-4 py-3 text-left text-xs font-semibold text-surface-400 uppercase tracking-wider;
+  }
+
+  .table-cell {
+    @apply px-4 py-4 text-sm text-surface-200;
+  }
+}
+
+/* React Big Calendar overrides */
+.rbc-calendar {
+  font-family: 'Inter', sans-serif !important;
+  background: transparent !important;
+}
+
+.rbc-toolbar {
+  margin-bottom: 1.5rem !important;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rbc-toolbar button {
+  background: rgba(45, 55, 77, 0.6) !important;
+  border: 1px solid rgba(64, 77, 104, 0.5) !important;
+  color: #d5dae6 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+
+.rbc-toolbar button:hover {
+  background: rgba(64, 77, 104, 0.6) !important;
+  border-color: rgba(92, 124, 250, 0.4) !important;
+  color: white !important;
+}
+
+.rbc-toolbar button.rbc-active {
+  background: linear-gradient(135deg, #4c6ef5, #4263eb) !important;
+  border-color: transparent !important;
+  color: white !important;
+  box-shadow: 0 0 15px rgba(92, 124, 250, 0.3) !important;
+}
+
+.rbc-header {
+  padding: 0.75rem 0.5rem !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #a8b2c9 !important;
+  border-bottom: 1px solid rgba(64, 77, 104, 0.4) !important;
+  background: rgba(26, 32, 53, 0.6) !important;
+}
+
+.rbc-month-view,
+.rbc-time-view {
+  border: 1px solid rgba(64, 77, 104, 0.3) !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+}
+
+.rbc-month-row + .rbc-month-row {
+  border-top: 1px solid rgba(64, 77, 104, 0.25) !important;
+}
+
+.rbc-day-bg {
+  background: rgba(15, 20, 32, 0.4) !important;
+  transition: background 0.2s !important;
+}
+
+.rbc-day-bg:hover {
+  background: rgba(26, 32, 53, 0.6) !important;
+}
+
+.rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid rgba(64, 77, 104, 0.2) !important;
+}
+
+.rbc-off-range-bg {
+  background: rgba(15, 20, 32, 0.7) !important;
+}
+
+.rbc-today {
+  background: rgba(92, 124, 250, 0.08) !important;
+}
+
+.rbc-date-cell {
+  padding: 0.5rem !important;
+  font-size: 0.8rem !important;
+  color: #7b89a8 !important;
+}
+
+.rbc-date-cell.rbc-now {
+  color: #5c7cfa !important;
+  font-weight: 700 !important;
+}
+
+.rbc-event {
+  border-radius: 0.5rem !important;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  border: none !important;
+  opacity: 0.95 !important;
+}
+
+.rbc-event.rbc-selected {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3) !important;
+}
+
+.rbc-event-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rbc-show-more {
+  color: #748ffc !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+}
