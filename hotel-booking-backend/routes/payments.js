@@ -32,7 +32,7 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
     // Prepare payment data
     const paymentData = {
       amount: booking.totalPrice,
-      email: req.body.email || `${booking.guestPhone}@hotel.local`, // Fallback email if not provided
+      email: req.body.email || `booking-${booking._id}@staysync.com`, // Fallback with valid TLD
       firstName: booking.guestName.split(' ')[0] || 'Guest',
       lastName: booking.guestName.split(' ').slice(1).join(' ') || 'User',
       phoneNumber: booking.guestPhone.replace(/\D/g, '').slice(-10), // Last 10 digits only
@@ -40,8 +40,8 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
       callbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`,
       returnUrl: req.body.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/bookings/${booking._id}`,
       customization: {
-        title: 'Hotel Booking Payment',
-        description: `Payment for Room ${booking.room.roomNumber} - ${booking.guestName}`
+        title: 'StaySync', // 8 chars (Chapa limit is 16)
+        description: `Room ${booking.room.roomNumber} - ${booking.guestName}`
       }
     };
 

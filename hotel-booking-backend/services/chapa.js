@@ -55,8 +55,29 @@ const initializePayment = async (paymentData) => {
     return response.data;
   } catch (error) {
     console.error('Chapa initialization error:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || 'Failed to initialize payment');
+    throw new Error(formatChapaError(error, 'Failed to initialize payment'));
   }
+};
+
+const formatChapaError = (error, defaultMsg) => {
+  const data = error.response?.data;
+  if (!data) return error.message || defaultMsg;
+  
+  if (typeof data.message === 'string') {
+    return data.message;
+  }
+  
+  if (typeof data.message === 'object' && data.message !== null) {
+    // Flatten the validation errors into a single readable string
+    return Object.entries(data.message)
+      .map(([key, val]) => {
+        const valueStr = Array.isArray(val) ? val.join(', ') : String(val);
+        return `${key}: ${valueStr}`;
+      })
+      .join('; ');
+  }
+  
+  return data.message || defaultMsg;
 };
 
 /**
@@ -84,7 +105,7 @@ const verifyPayment = async (txRef) => {
     return response.data;
   } catch (error) {
     console.error('Chapa verification error:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || 'Failed to verify payment');
+    throw new Error(formatChapaError(error, 'Failed to verify payment'));
   }
 };
 
