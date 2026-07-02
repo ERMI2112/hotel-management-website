@@ -31,7 +31,6 @@ const initializePayment = async (paymentData) => {
       email: paymentData.email,
       first_name: paymentData.firstName,
       last_name: paymentData.lastName,
-      phone_number: paymentData.phoneNumber,
       tx_ref: paymentData.txRef,
       callback_url: paymentData.callbackUrl,
       return_url: paymentData.returnUrl,
@@ -40,6 +39,11 @@ const initializePayment = async (paymentData) => {
         description: 'Payment for hotel room booking'
       }
     };
+
+    // Only include phone_number if explicitly provided (avoid sending undefined/null)
+    if (paymentData.phoneNumber) {
+      payload.phone_number = paymentData.phoneNumber;
+    }
 
     const response = await axios.post(
       `${CHAPA_BASE_URL}/transaction/initialize`,
