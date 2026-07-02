@@ -2,18 +2,39 @@ const express = require('express');
 const Booking = require('../models/Booking');
 const { authenticate, authorize } = require('../middleware/auth');
 const { initializePayment, verifyPayment, verifyWebhookSignature } = require('../services/chapa');
+const { notifyPaymentReceived } = require('../services/telegram');
 
 const router = express.Router();
+
+const canInitiatePaymentForBooking = (booking, guestPhone) => {
+  if (!booking || !guestPhone) {
+    return false;
+  }
+
+  const normalizedGuestPhone = String(guestPhone).trim();
+  const normalizedBookingPhone = String(booking.guestPhone || '').trim();
+
+  return normalizedGuestPhone === normalizedBookingPhone;
+};
 
 // POST /api/payments/bookings/:id/initiate-payment - Initialize Chapa payment (Public for guests)
 router.post('/bookings/:id/initiate-payment', async (req, res) => {
   try {
     const { id } = req.params;
+    const { guestPhone } = req.body;
 
     // Find the booking
     const booking = await Booking.findById(id).populate('room');
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    if (!guestPhone) {
+      return res.status(400).json({ error: 'Guest phone is required to start payment' });
+    }
+
+    if (!canInitiatePaymentForBooking(booking, guestPhone)) {
+      return res.status(403).json({ error: 'Guest phone does not match this booking' });
     }
 
     // Check if payment is already completed
@@ -28,6 +49,10 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
 
     // Generate unique transaction reference
     const txRef = `booking-${booking._id}-${Date.now()}`;
+
+    // Persist the reference before calling Chapa so a fast webhook can still resolve the booking
+    booking.chapaReference = txRef;
+    await booking.save();
 
     // Prepare payment data (omit phoneNumber to let Chapa handle selection cleanly on their hosted page)
     const paymentData = {
@@ -46,10 +71,6 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
 
     // Initialize payment with Chapa
     const chapaResponse = await initializePayment(paymentData);
-
-    // Update booking with transaction reference
-    booking.chapaReference = txRef;
-    await booking.save();
 
     console.log('✅ Payment initialized:', {
       bookingId: booking._id,
@@ -72,11 +93,24 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
 });
 
 // POST /api/payments/webhook - Receive Chapa webhook callbacks
-router.post('/webhook', async (req, res) => {
+const handleWebhook = async (req, res) => {
   try {
-    const payload = req.body;
+    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : String(req.body ?? '');
     const signature = req.headers['x-chapa-signature'];
     const legacySignature = req.headers['chapa-signature'];
+
+    if (!rawBody) {
+      console.error('❌ Empty webhook body');
+      return res.status(400).json({ error: 'Empty webhook body' });
+    }
+
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('❌ Invalid webhook JSON payload:', parseError.message);
+      return res.status(400).json({ error: 'Invalid webhook payload' });
+    }
 
     console.log('📨 Webhook received:', {
       event: payload.event,
@@ -86,7 +120,7 @@ router.post('/webhook', async (req, res) => {
     });
 
     // Verify webhook signature
-    const isValid = verifyWebhookSignature(payload, signature, legacySignature);
+    const isValid = verifyWebhookSignature(rawBody, signature, legacySignature);
     if (!isValid) {
       console.error('❌ Invalid webhook signature');
       return res.status(401).json({ error: 'Invalid signature' });
@@ -105,8 +139,8 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).json({ error: 'Missing transaction reference' });
     }
 
-    // Find booking by Chapa reference
-    const booking = await Booking.findOne({ chapaReference: txRef });
+    // Find booking by Chapa reference (populate room for notifications)
+    const booking = await Booking.findOne({ chapaReference: txRef }).populate('room');
     if (!booking) {
       console.error('❌ Booking not found for txRef:', txRef);
       return res.status(404).json({ error: 'Booking not found' });
@@ -116,6 +150,7 @@ router.post('/webhook', async (req, res) => {
     switch (payload.event) {
       case 'charge.success':
         // Webhook signature is already verified, trust the payload directly
+        const wasPaidWebhook = booking.paymentStatus === 'paid';
         booking.paymentStatus = 'paid';
         await booking.save();
         
@@ -124,6 +159,10 @@ router.post('/webhook', async (req, res) => {
           txRef: txRef,
           amount: booking.totalPrice
         });
+
+        if (!wasPaidWebhook && booking.room) {
+          await notifyPaymentReceived(booking, booking.room);
+        }
         break;
 
       case 'charge.failed':
@@ -157,7 +196,7 @@ router.post('/webhook', async (req, res) => {
     // Still return 200 to prevent retries for unrecoverable errors
     res.status(200).send('OK');
   }
-});
+};
 
 // GET /api/payments/verify/:txRef - Manually verify a payment (Public for frontend check)
 router.get('/verify/:txRef', async (req, res) => {
@@ -167,15 +206,20 @@ router.get('/verify/:txRef', async (req, res) => {
     // Verify with Chapa
     const verification = await verifyPayment(txRef);
 
-    // Find and update booking
-    const booking = await Booking.findOne({ chapaReference: txRef });
+    // Find and update booking (populate room for notifications)
+    const booking = await Booking.findOne({ chapaReference: txRef }).populate('room');
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
     if (verification.status === 'success' && verification.data?.status === 'success') {
+      const wasPaidVerify = booking.paymentStatus === 'paid';
       booking.paymentStatus = 'paid';
       await booking.save();
+
+      if (!wasPaidVerify && booking.room) {
+        await notifyPaymentReceived(booking, booking.room);
+      }
     }
 
     res.json({
@@ -190,3 +234,5 @@ router.get('/verify/:txRef', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.handleWebhook = handleWebhook;
+module.exports.canInitiatePaymentForBooking = canInitiatePaymentForBooking;
