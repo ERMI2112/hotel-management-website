@@ -205,7 +205,7 @@ export default function PublicBooking() {
 
             {paymentReturn.paymentStatus !== 'paid' && (
               <button 
-                onClick={() => handlePay(paymentReturn.id, paymentReturn.guestPhone + '@hotel.local')} 
+                onClick={() => handlePay(paymentReturn.id, null)} 
                 disabled={paying}
                 className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
               >
@@ -350,7 +350,7 @@ export default function PublicBooking() {
             )}
 
             <button 
-              onClick={() => handlePay(success.id, success.guestPhone + '@hotel.local')} 
+              onClick={() => handlePay(success.id, null)} 
               disabled={paying}
               className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
             >
