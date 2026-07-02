@@ -103,12 +103,12 @@ export default function PublicBooking() {
     getRooms({ publicOnly: true }).then((r) => setRooms(r));
   };
 
-  const handlePay = async (bookingId, email) => {
+  const handlePay = async (bookingId, email, guestPhone) => {
     setPaying(true);
     setError('');
     try {
       const returnUrl = `${window.location.origin}${window.location.pathname}?status=payment-return&bookingId=${bookingId}`;
-      const res = await initiatePayment(bookingId, { email, returnUrl });
+      const res = await initiatePayment(bookingId, { email, guestPhone, returnUrl });
       if (res.checkoutUrl) {
         window.location.href = res.checkoutUrl;
       } else {
@@ -238,7 +238,7 @@ export default function PublicBooking() {
 
             {paymentReturn.paymentStatus !== 'paid' && (
               <button 
-                onClick={() => handlePay(paymentReturn.id, null)} 
+                onClick={() => handlePay(paymentReturn.id, null, paymentReturn.guestPhone)} 
                 disabled={paying}
                 className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
               >
@@ -383,7 +383,7 @@ export default function PublicBooking() {
             )}
 
             <button 
-              onClick={() => handlePay(success.id, null)} 
+              onClick={() => handlePay(success.id, null, success.guestPhone)} 
               disabled={paying}
               className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
             >
