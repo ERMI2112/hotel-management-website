@@ -122,10 +122,10 @@ const verifyPayment = async (txRef) => {
  */
 const verifyWebhookSignature = (payload, signature, legacySignature) => {
   try {
-    const webhookSecret = process.env.CHAPA_WEBHOOK_SECRET;
+    const webhookSecret = process.env.CHAPA_WEBHOOK_SECRET || process.env.CHAPA_SECRET_KEY;
     
     if (!webhookSecret) {
-      console.warn('⚠️  CHAPA_WEBHOOK_SECRET not configured - webhook signature verification disabled');
+      console.warn('⚠️  Webhook signing key not configured - webhook signature verification disabled');
       return true; // Allow in development, but log warning
     }
 
