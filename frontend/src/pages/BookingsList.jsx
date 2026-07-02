@@ -57,6 +57,15 @@ export default function BookingsList() {
     return map[s] || 'status-badge bg-surface-500/15 text-surface-400';
   };
 
+  const paymentClass = (p) => {
+    const map = {
+      paid: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-green-500/15 text-green-300 border border-green-500/20',
+      pending: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/20',
+      failed: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-red-500/15 text-red-300 border border-red-500/20',
+    };
+    return map[p] || map.pending;
+  };
+
   return (
     <div className="animate-fade-in">
       <Header title="Bookings" subtitle="All reservations and their status" />
@@ -110,6 +119,7 @@ export default function BookingsList() {
                     <th className="table-header">Check-in</th>
                     <th className="table-header">Check-out</th>
                     <th className="table-header">Status</th>
+                    <th className="table-header">Payment</th>
                     <th className="table-header text-right">Total</th>
                     <th className="table-header text-right">Action</th>
                   </tr>
@@ -139,6 +149,11 @@ export default function BookingsList() {
                       <td className="table-cell">
                         <span className={statusClass(b.status)}>
                           {b.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="table-cell">
+                        <span className={paymentClass(b.paymentStatus)}>
+                          {b.paymentStatus === 'paid' ? '✓ Paid' : b.paymentStatus === 'failed' ? '✗ Failed' : '⏳ Pending'}
                         </span>
                       </td>
                       <td className="table-cell text-right">
