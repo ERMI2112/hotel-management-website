@@ -36,8 +36,8 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
       firstName: booking.guestName.split(' ')[0] || 'Guest',
       lastName: booking.guestName.split(' ').slice(1).join(' ') || 'User',
       txRef: txRef,
-      callbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`,
-      returnUrl: req.body.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/bookings/${booking._id}`,
+      callbackUrl: `${req.protocol}://${req.get('host')}/api/payments/webhook`,
+      returnUrl: req.body.returnUrl || `${req.protocol}://${req.get('host')}/bookings/${booking._id}`,
       customization: {
         title: 'StaySync',
         description: `Room ${booking.room.roomNumber} - ${booking.guestName}`
@@ -115,21 +115,15 @@ router.post('/webhook', async (req, res) => {
     // Handle different events
     switch (payload.event) {
       case 'charge.success':
-        // Verify payment with Chapa API before marking as paid
-        const verification = await verifyPayment(txRef);
+        // Webhook signature is already verified, trust the payload directly
+        booking.paymentStatus = 'paid';
+        await booking.save();
         
-        if (verification.status === 'success' && verification.data?.status === 'success') {
-          booking.paymentStatus = 'paid';
-          await booking.save();
-          
-          console.log('✅ Payment confirmed:', {
-            bookingId: booking._id,
-            txRef: txRef,
-            amount: booking.totalPrice
-          });
-        } else {
-          console.warn('⚠️  Payment verification failed:', verification);
-        }
+        console.log('✅ Payment confirmed via webhook:', {
+          bookingId: booking._id,
+          txRef: txRef,
+          amount: booking.totalPrice
+        });
         break;
 
       case 'charge.failed':

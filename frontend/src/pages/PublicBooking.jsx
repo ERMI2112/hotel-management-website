@@ -16,8 +16,18 @@ export default function PublicBooking() {
   const [paying, setPaying] = useState(false);
   const [paymentReturn, setPaymentReturn] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [crashError, setCrashError] = useState(null);
 
   useEffect(() => {
+    const handleGlobalError = (event) => {
+      setCrashError(event.error?.stack || event.message || 'Unknown global error');
+    };
+    const handleRejection = (event) => {
+      setCrashError(event.reason?.stack || event.reason?.message || String(event.reason));
+    };
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleRejection);
+
     const queryParams = new URLSearchParams(window.location.search);
     const status = queryParams.get('status');
     const bookingId = queryParams.get('bookingId');
@@ -49,6 +59,10 @@ export default function PublicBooking() {
       .then((r) => setRooms(r))
       .catch((err) => setError(err.message || 'Could not load rooms'))
       .finally(() => setLoading(false));
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
   }, []);
 
   const selectedRoom = rooms.find((r) => r.id === form.roomId);
@@ -105,6 +119,25 @@ export default function PublicBooking() {
       setPaying(false);
     }
   };
+
+  if (crashError) {
+    return (
+      <div className="min-h-screen bg-surface-950 flex items-center justify-center p-6 text-center">
+        <div className="glass-card max-w-lg w-full p-8 border border-red-500/30">
+          <div className="w-16 h-16 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center mb-6 mx-auto">
+            <AlertCircle size={28} className="text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-surface-100 mb-4">Application Error</h2>
+          <pre className="bg-black/50 p-4 rounded-lg text-xs text-red-300 overflow-auto max-h-60 font-mono text-left whitespace-pre-wrap">
+            {crashError}
+          </pre>
+          <button onClick={() => window.location.reload()} className="btn-accent w-full mt-6">
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-950 relative overflow-hidden">
