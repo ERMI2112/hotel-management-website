@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hotel, CheckCircle, Loader2, User, Phone, CalendarDays, ArrowRight } from 'lucide-react';
-import { getRooms, createBooking } from '../services/api';
+import { Hotel, CheckCircle, Loader2, User, Phone, CalendarDays, ArrowRight, CreditCard, AlertCircle } from 'lucide-react';
+import { getRooms, createBooking, initiatePayment, getPublicBooking, verifyPayment } from '../services/api';
 
 const typeLabels = { single: '🛏️ Single', double: '🛏️🛏️ Double', suite: '👑 Suite' };
 
@@ -13,8 +13,38 @@ export default function PublicBooking() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [paymentReturn, setPaymentReturn] = useState(null);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const status = queryParams.get('status');
+    const bookingId = queryParams.get('bookingId');
+    const txRef = queryParams.get('trx_ref');
+
+    if (status === 'payment-return' && bookingId) {
+      setCheckingPayment(true);
+      // Wait 1.5 seconds for webhook to process, then verify status
+      setTimeout(async () => {
+        try {
+          if (txRef) {
+            try {
+              await verifyPayment(txRef);
+            } catch (err) {
+              console.warn('Manual verification error:', err);
+            }
+          }
+          const booking = await getPublicBooking(bookingId);
+          setPaymentReturn(booking);
+        } catch (err) {
+          setError(err.message || 'Failed to verify payment status');
+        } finally {
+          setCheckingPayment(false);
+        }
+      }, 1500);
+    }
+
     getRooms({ publicOnly: true })
       .then((r) => setRooms(r))
       .catch((err) => setError(err.message || 'Could not load rooms'))
@@ -52,8 +82,28 @@ export default function PublicBooking() {
   const resetForm = () => {
     setForm({ guestName: '', guestPhone: '', roomId: '', checkIn: '', checkOut: '' });
     setSuccess(null);
+    setPaymentReturn(null);
     setError('');
+    // Remove query params from URL
+    window.history.replaceState({}, document.title, window.location.pathname);
     getRooms({ publicOnly: true }).then((r) => setRooms(r));
+  };
+
+  const handlePay = async (bookingId, email) => {
+    setPaying(true);
+    setError('');
+    try {
+      const returnUrl = `${window.location.origin}${window.location.pathname}?status=payment-return&bookingId=${bookingId}`;
+      const res = await initiatePayment(bookingId, { email, returnUrl });
+      if (res.checkoutUrl) {
+        window.location.href = res.checkoutUrl;
+      } else {
+        throw new Error('Failed to retrieve Chapa checkout URL');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to initiate payment');
+      setPaying(false);
+    }
   };
 
   return (
@@ -87,8 +137,87 @@ export default function PublicBooking() {
         </p>
       </div>
 
-      {/* Booking Form */}
-      {!success ? (
+      {/* Booking Form or payment states */}
+      {checkingPayment ? (
+        <div className="relative z-10 max-w-md mx-auto px-6 pb-20 animate-scale-in">
+          <div className="glass-card p-10 text-center">
+            <Loader2 size={36} className="text-primary-400 animate-spin mx-auto mb-6" />
+            <h2 className="text-xl font-bold text-surface-100 mb-2">Verifying Payment Status</h2>
+            <p className="text-surface-400">Please wait while we confirm your transaction with Chapa...</p>
+          </div>
+        </div>
+      ) : paymentReturn ? (
+        /* Payment Return Feedback State */
+        <div className="relative z-10 max-w-md mx-auto px-6 pb-20 animate-scale-in">
+          <div className="glass-card p-10 text-center">
+            {paymentReturn.paymentStatus === 'paid' ? (
+              <>
+                <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle size={36} className="text-green-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Successful!</h2>
+                <p className="text-surface-400 mb-6">Thank you, {paymentReturn.guestName}. Your payment was processed successfully.</p>
+              </>
+            ) : paymentReturn.paymentStatus === 'failed' ? (
+              <>
+                <div className="w-20 h-20 rounded-full bg-red-500/15 border-2 border-red-500/40 flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle size={36} className="text-red-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Failed</h2>
+                <p className="text-surface-400 mb-6">We could not process your payment. Please try again or contact staff.</p>
+              </>
+            ) : (
+              <>
+                <div className="w-20 h-20 rounded-full bg-amber-500/15 border-2 border-amber-500/40 flex items-center justify-center mx-auto mb-6">
+                  <Loader2 size={36} className="text-amber-400 animate-spin" />
+                </div>
+                <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Pending</h2>
+                <p className="text-surface-400 mb-6">We are waiting for payment confirmation from Chapa. If you have already paid, this will update automatically soon.</p>
+              </>
+            )}
+
+            <div className="p-5 rounded-xl bg-surface-800/40 text-left space-y-3 mb-8">
+              <div className="flex justify-between text-sm">
+                <span className="text-surface-400">Room</span>
+                <span className="text-surface-200 font-mono">#{paymentReturn.roomDetails?.roomNumber || paymentReturn.room?.roomNumber || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-surface-400">Payment Status</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-bold capitalize
+                  ${paymentReturn.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-300' : 
+                    paymentReturn.paymentStatus === 'failed' ? 'bg-red-500/20 text-red-300' : 
+                    'bg-amber-500/20 text-amber-300'}`}
+                >
+                  {paymentReturn.paymentStatus}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm pt-3 border-t border-surface-700/30">
+                <span className="text-surface-400 font-medium">Total</span>
+                <span className="text-surface-100 font-bold text-lg">{paymentReturn.totalPrice?.toLocaleString()} ETB</span>
+              </div>
+            </div>
+
+            {error && (
+              <div className="px-4 py-3 mb-6 rounded-xl bg-danger-500/10 border border-danger-500/30 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            {paymentReturn.paymentStatus !== 'paid' && (
+              <button 
+                onClick={() => handlePay(paymentReturn.id, paymentReturn.guestPhone + '@hotel.local')} 
+                disabled={paying}
+                className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
+              >
+                {paying ? <Loader2 size={16} className="animate-spin" /> : <CreditCard size={16} />}
+                Try Paying Again
+              </button>
+            )}
+            
+            <button onClick={resetForm} className="btn-ghost w-full">Book Another Room</button>
+          </div>
+        </div>
+      ) : !success ? (
         <div className="relative z-10 max-w-3xl mx-auto px-6 pb-20 animate-slide-up">
           <form onSubmit={handleSubmit} className="glass-card p-8 space-y-8">
             {/* Guest Info */}
@@ -213,6 +342,24 @@ export default function PublicBooking() {
                 <span className="text-surface-100 font-bold text-lg">{success.totalPrice?.toLocaleString()} ETB</span>
               </div>
             </div>
+
+            {error && (
+              <div className="px-4 py-3 mb-6 rounded-xl bg-danger-500/10 border border-danger-500/30 text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            <button 
+              onClick={() => handlePay(success.id, success.guestPhone + '@hotel.local')} 
+              disabled={paying}
+              className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
+            >
+              {paying ? (
+                <><Loader2 size={16} className="animate-spin" /> Preparing Payment...</>
+              ) : (
+                <><CreditCard size={16} /> Pay with Chapa Now</>
+              )}
+            </button>
 
             <button onClick={resetForm} className="btn-ghost w-full">Book Another Room</button>
           </div>

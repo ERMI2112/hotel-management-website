@@ -112,21 +112,21 @@ export default function Login() {
 
           {/* Demo hint */}
           <div className="mt-6 pt-6 border-t border-surface-700/30 text-center">
-            <p className="text-xs text-surface-500 mb-2">Seeded Credentials</p>
+            <p className="text-xs text-surface-500 mb-2">Seeded Accounts</p>
             <div className="flex gap-3 justify-center">
               <button
                 type="button"
-                onClick={() => { setEmail('admin@hotel.com'); setPassword('admin123'); }}
+                onClick={() => { setEmail('admin@hotel.com'); }}
                 className="px-3 py-1.5 rounded-lg bg-primary-500/10 border border-primary-500/20 text-primary-300 text-xs font-medium hover:bg-primary-500/20 transition-all"
               >
-                Admin Login
+                Admin Email
               </button>
               <button
                 type="button"
-                onClick={() => { setEmail('staff@hotel.com'); setPassword('staff123'); }}
+                onClick={() => { setEmail('staff@hotel.com'); }}
                 className="px-3 py-1.5 rounded-lg bg-accent-500/10 border border-accent-500/20 text-accent-300 text-xs font-medium hover:bg-accent-500/20 transition-all"
               >
-                Staff Login
+                Staff Email
               </button>
             </div>
           </div>

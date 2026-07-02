@@ -42,7 +42,7 @@ npm run dev
 - Auth tokens are stored in `localStorage` under `hotel_token`.
 - Public booking uses the backend route `POST /api/bookings`.
 - Booking invoice downloads are served from `GET /api/bookings/:id/invoice`.
-- The frontend expects the backend seed account `admin@hotel.com` / `admin123` unless you change the seed data.
+- The frontend expects the backend seed account email `admin@hotel.com`; set the password via backend seed env vars.
 
 ## Production build
 

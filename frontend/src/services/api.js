@@ -169,3 +169,26 @@ export async function getStats() {
     totalRevenue,
   };
 }
+
+export async function initiatePayment(bookingId, { email, returnUrl } = {}) {
+  const result = await request(`/api/payments/bookings/${bookingId}/initiate-payment`, {
+    auth: false,
+    method: 'POST',
+    body: JSON.stringify({ email, returnUrl }),
+  });
+  return result;
+}
+
+export async function getPublicBooking(bookingId) {
+  const booking = await request(`/api/bookings/public/${bookingId}`, {
+    auth: false,
+  });
+  return normalizeBooking(booking);
+}
+
+export async function verifyPayment(txRef) {
+  const result = await request(`/api/payments/verify/${txRef}`, {
+    auth: false,
+  });
+  return result;
+}
