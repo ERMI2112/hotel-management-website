@@ -29,17 +29,12 @@ router.post('/bookings/:id/initiate-payment', async (req, res) => {
     // Generate unique transaction reference
     const txRef = `booking-${booking._id}-${Date.now()}`;
 
-    // Prepare payment data
-    // In test mode Chapa requires their specific test phone number for bank payment
-    const isTestMode = (process.env.CHAPA_SECRET_KEY || '').startsWith('CHASECK_TEST');
-    const chapaPhone = isTestMode ? '0900123456' : booking.guestPhone.replace(/\D/g, '').slice(-10);
-
+    // Prepare payment data (omit phoneNumber to let Chapa handle selection cleanly on their hosted page)
     const paymentData = {
       amount: booking.totalPrice,
       email: req.body.email || `booking-${booking._id}@staysync.com`,
       firstName: booking.guestName.split(' ')[0] || 'Guest',
       lastName: booking.guestName.split(' ').slice(1).join(' ') || 'User',
-      phoneNumber: chapaPhone,
       txRef: txRef,
       callbackUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`,
       returnUrl: req.body.returnUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/bookings/${booking._id}`,
