@@ -29,10 +29,19 @@ const bookingSchema = new mongoose.Schema({
     enum: ['confirmed', 'cancelled', 'checked_out'],
     default: 'confirmed'
   },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending'
+  },
   totalPrice: {
     type: Number,
     required: true,
     min: 0
+  },
+  chapaReference: {
+    type: String,
+    sparse: true
   },
   createdAt: {
     type: Date,

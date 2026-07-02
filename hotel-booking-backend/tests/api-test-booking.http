@@ -7,7 +7,7 @@ Content-Type: application/json
 
 {
   "email": "admin@hotel.com",
-  "password": "admin123"
+  "password": "<ADMIN_SEED_PASSWORD>"
 }
 
 ### 2. Create a test room (requires token from step 1)

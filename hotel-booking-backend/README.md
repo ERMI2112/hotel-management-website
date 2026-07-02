@@ -46,6 +46,11 @@ All authenticated routes require `Authorization: Bearer <JWT>` header.
 - `PATCH /api/bookings/:id/cancel` - Cancel booking (auth: owner/staff)
 - `GET /api/bookings/:id/invoice` - Get PDF invoice (auth: owner/staff)
 
+### Payments (Chapa Integration)
+- `POST /api/payments/bookings/:id/initiate-payment` - Initialize payment (auth: owner/staff)
+- `POST /api/payments/webhook` - Receive Chapa webhook callbacks (public, signature-verified)
+- `GET /api/payments/verify/:txRef` - Verify payment status (auth: owner/staff)
+
 ## Default Admin Account
 
 Create your first admin user by running the seed script or use MongoDB Compass/CLI to insert:
@@ -61,6 +66,8 @@ Create your first admin user by running the seed script or use MongoDB Compass/C
 }
 ```
 
+Set `ADMIN_SEED_PASSWORD` in `.env` before running the seed script.
+
 ## Telegram Bot Setup
 
 1. Message @BotFather on Telegram
@@ -68,6 +75,17 @@ Create your first admin user by running the seed script or use MongoDB Compass/C
 3. Copy the bot token to `TELEGRAM_BOT_TOKEN` in .env
 4. Get your chat ID by messaging @userinfobot
 5. Copy your chat ID to `OWNER_CHAT_ID` in .env
+
+## Chapa Payment Setup
+
+1. Sign up at https://dashboard.chapa.co
+2. Get your API keys (use test mode for development)
+3. Add `CHAPA_SECRET_KEY` to .env
+4. Set up webhook at Settings → Webhooks
+5. Add webhook URL: `https://your-backend/api/payments/webhook`
+6. Create webhook secret and add to `CHAPA_WEBHOOK_SECRET` in .env
+
+**See `CHAPA_INTEGRATION_GUIDE.md` for detailed setup instructions.**
 
 ## Tech Stack
 
@@ -77,3 +95,5 @@ Create your first admin user by running the seed script or use MongoDB Compass/C
 - node-telegram-bot-api - Notifications
 - pdfkit - Invoice generation
 - express-validator - Input validation
+- axios - HTTP client for Chapa API
+- Chapa - Payment gateway integration

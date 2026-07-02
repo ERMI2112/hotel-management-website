@@ -15,6 +15,8 @@
    Edit `.env` and set:
    - `MONGODB_URI` (local or MongoDB Atlas)
    - `JWT_SECRET` (any random string)
+   - `ADMIN_SEED_PASSWORD` (used by seed scripts)
+   - `STAFF_SEED_PASSWORD` (used by seed scripts)
    - `TELEGRAM_BOT_TOKEN` (optional, from @BotFather)
    - `OWNER_CHAT_ID` (optional, from @userinfobot)
 
@@ -22,7 +24,7 @@
    ```bash
    npm run seed
    ```
-   Default credentials: `admin@hotel.com` / `admin123`
+   The seed password comes from `ADMIN_SEED_PASSWORD`.
 
 4. **Start the server:**
    ```bash
@@ -38,7 +40,7 @@ Test with curl or Postman:
 # Login
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"admin@hotel.com\",\"password\":\"admin123\"}"
+   -d "{\"email\":\"admin@hotel.com\",\"password\":\"<ADMIN_SEED_PASSWORD>\"}"
 
 # List rooms (requires token)
 curl http://localhost:5000/api/rooms \

@@ -8,6 +8,7 @@ const { initTelegramBot } = require('./services/telegram');
 const authRoutes = require('./routes/auth');
 const roomRoutes = require('./routes/rooms');
 const bookingRoutes = require('./routes/bookings');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

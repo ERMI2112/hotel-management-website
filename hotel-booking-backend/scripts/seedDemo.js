@@ -14,6 +14,13 @@ const demoRooms = [
 
 const seedDemo = async () => {
   try {
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+    const staffPassword = process.env.STAFF_SEED_PASSWORD;
+
+    if (!adminPassword || !staffPassword) {
+      throw new Error('Set ADMIN_SEED_PASSWORD and STAFF_SEED_PASSWORD before running this script');
+    }
+
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
@@ -22,14 +29,14 @@ const seedDemo = async () => {
         name: 'Admin Owner',
         email: 'admin@hotel.com',
         phone: '+251900000000',
-        password: 'Xk9$mTv2!qLpR7nZ',
+        password: adminPassword,
         role: 'owner',
       },
       {
         name: 'Front Desk',
         email: 'staff@hotel.com',
         phone: '+251911111111',
-        password: 'Jw4#bNc8@dYsF3hQ',
+        password: staffPassword,
         role: 'staff',
       },
     ];
@@ -49,7 +56,7 @@ const seedDemo = async () => {
         passwordHash,
         role: entry.role,
       });
-      console.log(`Created user: ${entry.email} / ${entry.password}`);
+      console.log(`Created user: ${entry.email} / password from env`);
     }
 
     for (const room of demoRooms) {

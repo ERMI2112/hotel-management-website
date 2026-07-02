@@ -166,4 +166,19 @@ router.get('/:id/invoice', authenticate, authorize('owner', 'staff'), async (req
   }
 });
 
+// GET /api/bookings/public/:id - Get booking details (Public for guests)
+router.get('/public/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const booking = await Booking.findById(id).populate('room', 'roomNumber type pricePerNight');
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    res.json(booking);
+  } catch (error) {
+    console.error('Fetch public booking error:', error);
+    res.status(500).json({ error: 'Failed to fetch booking details' });
+  }
+});
+
 module.exports = router;

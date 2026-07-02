@@ -5,6 +5,12 @@ const User = require('../models/User');
 
 const seedAdmin = async () => {
   try {
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+
+    if (!adminPassword) {
+      throw new Error('Set ADMIN_SEED_PASSWORD before running this script');
+    }
+
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB');
 
@@ -16,7 +22,7 @@ const seedAdmin = async () => {
     }
 
     // Create admin user
-    const passwordHash = await bcrypt.hash('admin123', 10);
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
     const admin = new User({
       name: 'Admin',
       email: 'admin@hotel.com',
@@ -28,8 +34,8 @@ const seedAdmin = async () => {
     await admin.save();
     console.log('✅ Admin user created successfully');
     console.log('📧 Email: admin@hotel.com');
-    console.log('🔑 Password: admin123');
-    console.log('⚠️  CHANGE THIS PASSWORD IN PRODUCTION!');
+    console.log('🔑 Password loaded from ADMIN_SEED_PASSWORD');
+    console.log('⚠️  Keep seed passwords out of source control and rotate them in production!');
     
     process.exit(0);
   } catch (error) {
