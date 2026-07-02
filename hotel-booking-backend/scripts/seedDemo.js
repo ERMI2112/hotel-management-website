@@ -22,14 +22,14 @@ const seedDemo = async () => {
         name: 'Admin Owner',
         email: 'admin@hotel.com',
         phone: '+251900000000',
-        password: 'admin123',
+        password: 'Xk9$mTv2!qLpR7nZ',
         role: 'owner',
       },
       {
         name: 'Front Desk',
         email: 'staff@hotel.com',
         phone: '+251911111111',
-        password: 'staff123',
+        password: 'Jw4#bNc8@dYsF3hQ',
         role: 'staff',
       },
     ];
