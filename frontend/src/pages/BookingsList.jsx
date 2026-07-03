@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Search, XCircle, Loader2, CalendarDays, Filter, FileDown } from 'lucide-react';
+import { Search, XCircle, Loader2, CalendarDays, Filter, FileDown, LogIn, LogOut } from 'lucide-react';
 import Header from '../components/Header';
-import { getBookings, cancelBooking, downloadInvoice } from '../services/api';
+import { getBookings, cancelBooking, downloadInvoice, checkInBooking, checkOutBooking } from '../services/api';
 
 export default function BookingsList() {
   const [bookings, setBookings] = useState([]);
@@ -11,6 +11,7 @@ export default function BookingsList() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [cancelling, setCancelling] = useState(null);
   const [downloading, setDownloading] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
 
   const loadBookings = async () => {
     setLoading(true);
@@ -30,6 +31,30 @@ export default function BookingsList() {
       await loadBookings();
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleCheckIn = async (id) => {
+    setActionLoading(id);
+    try {
+      await checkInBooking(id);
+      await loadBookings();
+    } catch (err) {
+      alert(err.message || 'Check-in failed');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCheckOut = async (id) => {
+    setActionLoading(id);
+    try {
+      await checkOutBooking(id);
+      await loadBookings();
+    } catch (err) {
+      alert(err.message || 'Check-out failed');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -54,7 +79,8 @@ export default function BookingsList() {
 
   const statusClass = (s) => {
     const map = { 
-      confirmed: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-success-500/10 text-green-400 border border-green-500/20', 
+      confirmed: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-400 border border-primary-500/20', 
+      checked_in: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-success-500/10 text-green-400 border border-green-500/20', 
       cancelled: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-danger-500/10 text-red-400 border border-red-500/20', 
       checked_out: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-800 text-surface-400 border border-surface-700/50' 
     };
@@ -95,6 +121,7 @@ export default function BookingsList() {
             >
               <option value="all">All Reservation Status</option>
               <option value="confirmed">Confirmed</option>
+              <option value="checked_in">Checked In</option>
               <option value="cancelled">Cancelled</option>
               <option value="checked_out">Checked Out</option>
             </select>
@@ -183,6 +210,38 @@ export default function BookingsList() {
                             </button>
                           )}
                           {b.status === 'confirmed' && (
+                            <button
+                              onClick={() => handleCheckIn(b.id)}
+                              disabled={actionLoading === b.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                text-green-300 bg-green-500/10 border border-green-500/20
+                                hover:bg-green-500/25 transition-all disabled:opacity-50"
+                            >
+                              {actionLoading === b.id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <LogIn size={12} />
+                              )}
+                              Check In
+                            </button>
+                          )}
+                          {b.status === 'checked_in' && (
+                            <button
+                              onClick={() => handleCheckOut(b.id)}
+                              disabled={actionLoading === b.id}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
+                                text-amber-300 bg-amber-500/10 border border-amber-500/20
+                                hover:bg-amber-500/25 transition-all disabled:opacity-50"
+                            >
+                              {actionLoading === b.id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <LogOut size={12} />
+                              )}
+                              Check Out
+                            </button>
+                          )}
+                          {(b.status === 'confirmed' || b.status === 'checked_in') && (
                             <button
                               onClick={() => handleCancel(b.id)}
                               disabled={cancelling === b.id}

@@ -3,9 +3,9 @@ import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { X, Phone, User, CalendarDays, DollarSign, XCircle } from 'lucide-react';
+import { X, Phone, User, CalendarDays, DollarSign, XCircle, LogIn, LogOut, Loader2 } from 'lucide-react';
 import Header from '../components/Header';
-import { getBookings, getRooms, cancelBooking } from '../services/api';
+import { getBookings, getRooms, cancelBooking, checkInBooking, checkOutBooking } from '../services/api';
 
 const localizer = dateFnsLocalizer({
   format,
@@ -17,6 +17,7 @@ const localizer = dateFnsLocalizer({
 
 const statusColors = {
   confirmed: { bg: '#4c6ef5', label: 'Confirmed' },
+  checked_in: { bg: '#22c55e', label: 'Checked In' },
   cancelled: { bg: '#ef4444', label: 'Cancelled' },
   checked_out: { bg: '#7b89a8', label: 'Checked Out' },
 };
@@ -27,6 +28,7 @@ export default function BookingCalendar() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -83,6 +85,34 @@ export default function BookingCalendar() {
       await loadData();
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleCheckIn = async () => {
+    if (!selected) return;
+    setActionLoading(true);
+    try {
+      await checkInBooking(selected.id);
+      setSelected(null);
+      await loadData();
+    } catch (err) {
+      alert(err.message || 'Check-in failed');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCheckOut = async () => {
+    if (!selected) return;
+    setActionLoading(true);
+    try {
+      await checkOutBooking(selected.id);
+      setSelected(null);
+      await loadData();
+    } catch (err) {
+      alert(err.message || 'Check-out failed');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -190,13 +220,25 @@ export default function BookingCalendar() {
             <div className="flex gap-3 mt-8">
               <button onClick={() => setSelected(null)} className="btn-ghost flex-1">Close</button>
               {selected.status === 'confirmed' && (
+                <button onClick={handleCheckIn} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-green-300 bg-green-500/10 border border-green-500/20 hover:bg-green-500/25 transition-all disabled:opacity-50">
+                  {actionLoading ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
+                  Check In
+                </button>
+              )}
+              {selected.status === 'checked_in' && (
+                <button onClick={handleCheckOut} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/25 transition-all disabled:opacity-50">
+                  {actionLoading ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
+                  Check Out
+                </button>
+              )}
+              {(selected.status === 'confirmed' || selected.status === 'checked_in') && (
                 <button onClick={handleCancel} disabled={cancelling} className="btn-danger flex-1 flex items-center justify-center gap-2">
                   {cancelling ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <XCircle size={16} />
                   )}
-                  Cancel Booking
+                  Cancel
                 </button>
               )}
             </div>

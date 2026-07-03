@@ -135,6 +135,11 @@ router.patch('/:id/cancel', authenticate, authorize('owner', 'staff'), async (re
       return res.status(400).json({ error: 'Booking is already cancelled' });
     }
 
+    // If guest was checked in, release the room
+    if (booking.status === 'checked_in') {
+      await Room.findByIdAndUpdate(booking.room, { status: 'available' });
+    }
+
     booking.status = 'cancelled';
     await booking.save();
 
@@ -142,6 +147,60 @@ router.patch('/:id/cancel', authenticate, authorize('owner', 'staff'), async (re
   } catch (error) {
     console.error('Cancel booking error:', error);
     res.status(500).json({ error: 'Failed to cancel booking' });
+  }
+});
+
+// PATCH /api/bookings/:id/check-in - Check in guest (auth: owner/staff)
+router.patch('/:id/check-in', authenticate, authorize('owner', 'staff'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({ error: `Cannot check in from '${booking.status}' status` });
+    }
+
+    booking.status = 'checked_in';
+    await booking.save();
+
+    // Update room status to occupied
+    await Room.findByIdAndUpdate(booking.room, { status: 'occupied' });
+
+    res.json(booking);
+  } catch (error) {
+    console.error('Check-in error:', error);
+    res.status(500).json({ error: 'Failed to process check-in' });
+  }
+});
+
+// PATCH /api/bookings/:id/check-out - Check out guest (auth: owner/staff)
+router.patch('/:id/check-out', authenticate, authorize('owner', 'staff'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    if (booking.status !== 'checked_in') {
+      return res.status(400).json({ error: `Cannot check out from '${booking.status}' status` });
+    }
+
+    booking.status = 'checked_out';
+    await booking.save();
+
+    // Update room status back to available
+    await Room.findByIdAndUpdate(booking.room, { status: 'available' });
+
+    res.json(booking);
+  } catch (error) {
+    console.error('Check-out error:', error);
+    res.status(500).json({ error: 'Failed to process check-out' });
   }
 });
 

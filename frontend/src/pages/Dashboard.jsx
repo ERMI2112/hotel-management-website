@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BedDouble, Users, CheckCircle, TrendingUp, CalendarDays, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { BedDouble, Users, CheckCircle, TrendingUp, CalendarDays, Loader2, LogIn, LogOut, Clock, Percent } from 'lucide-react';
+import { format, isToday, parseISO } from 'date-fns';
 import Header from '../components/Header';
 import { getStats, getBookings } from '../services/api';
 
@@ -14,7 +14,7 @@ export default function Dashboard() {
       try {
         const [s, b] = await Promise.all([getStats(), getBookings()]);
         setStats(s);
-        setBookings(b.slice(0, 8));
+        setBookings(b);
       } catch (err) {
         console.error(err);
       } finally {
@@ -24,18 +24,32 @@ export default function Dashboard() {
     load();
   }, []);
 
+  /* ─── Today's Agenda ─── */
+  const todayArrivals = bookings.filter(b => b.status === 'confirmed' && isToday(parseISO(b.checkIn)));
+  const todayDepartures = bookings.filter(b => (b.status === 'checked_in' || b.status === 'confirmed') && isToday(parseISO(b.checkOut)));
+  const inHouseNow = bookings.filter(b => b.status === 'checked_in');
+  const occupancyRate = stats?.totalRooms > 0 ? Math.round((stats.occupied / stats.totalRooms) * 100) : 0;
+
+  /* ─── Stat Cards ─── */
   const statCards = stats
     ? [
         { label: 'Total Rooms', value: stats.totalRooms, icon: BedDouble, color: 'text-primary-400', bg: 'bg-primary-500/10 border-primary-500/20' },
-        { label: 'Occupied', value: stats.occupied, icon: Users, color: 'text-accent-400', bg: 'bg-accent-500/10 border-accent-500/20' },
+        { label: 'Occupancy Rate', value: `${occupancyRate}%`, icon: Percent, color: 'text-accent-400', bg: 'bg-accent-500/10 border-accent-500/20' },
         { label: 'Available', value: stats.available, icon: CheckCircle, color: 'text-green-400', bg: 'bg-success-500/10 border-green-500/20' },
-        { label: 'Revenue', value: `${stats.totalRevenue.toLocaleString()} ETB`, icon: TrendingUp, color: 'text-accent-400', bg: 'bg-accent-500/10 border-accent-500/20' },
+        { label: 'Total Revenue', value: `${stats.totalRevenue.toLocaleString()} ETB`, icon: TrendingUp, color: 'text-accent-400', bg: 'bg-accent-500/10 border-accent-500/20' },
       ]
     : [];
 
+  const agendaCards = [
+    { label: 'Arrivals Today', value: todayArrivals.length, icon: LogIn, color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20', desc: 'Expected check-ins' },
+    { label: 'Departures Today', value: todayDepartures.length, icon: LogOut, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', desc: 'Expected check-outs' },
+    { label: 'In-House Now', value: inHouseNow.length, icon: Users, color: 'text-primary-400', bg: 'bg-primary-500/10 border-primary-500/20', desc: 'Currently checked in' },
+  ];
+
   const statusClass = (s) => {
     const map = { 
-      confirmed: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-success-500/10 text-green-400 border border-green-500/20', 
+      confirmed: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-500/10 text-primary-400 border border-primary-500/20', 
+      checked_in: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-success-500/10 text-green-400 border border-green-500/20', 
       cancelled: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-danger-500/10 text-red-400 border border-red-500/20', 
       checked_out: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-800 text-surface-400 border border-surface-700/50' 
     };
@@ -50,6 +64,8 @@ export default function Dashboard() {
     };
     return map[p] || map.pending;
   };
+
+  const recentBookings = bookings.slice(0, 8);
 
   return (
     <div className="animate-fade-in flex-1 bg-surface-950">
@@ -81,6 +97,30 @@ export default function Dashboard() {
               ))}
         </div>
 
+        {/* Today's Agenda */}
+        {!loading && (
+          <div className="animate-fade-in" style={{ animationDelay: '0.15s', animationFillMode: 'both' }}>
+            <h2 className="text-lg font-bold text-surface-100 tracking-tight mb-4 flex items-center gap-2">
+              <Clock size={18} className="text-accent-400" />
+              Today's Agenda
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {agendaCards.map((card) => (
+                <div key={card.label} className="glass-card p-5 flex items-center gap-4">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${card.bg} shrink-0`}>
+                    <card.icon size={20} className={card.color} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-extrabold text-surface-100">{card.value}</p>
+                    <p className="text-sm font-medium text-surface-400">{card.label}</p>
+                    <p className="text-[10px] text-surface-500 mt-0.5">{card.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Recent Bookings */}
         <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
           <div className="px-6 py-5 border-b border-surface-850 flex items-center justify-between">
@@ -89,7 +129,7 @@ export default function Dashboard() {
               <p className="text-xs text-surface-400 mt-0.5">Latest guests and booking statuses</p>
             </div>
             <span className="px-3 py-1 rounded-full bg-surface-800 text-xs font-semibold text-surface-300 border border-surface-700/50">
-              {bookings.length} bookings
+              {recentBookings.length} bookings
             </span>
           </div>
 
@@ -97,7 +137,7 @@ export default function Dashboard() {
             <div className="p-16 text-center">
               <Loader2 size={32} className="text-primary-400 animate-spin mx-auto" />
             </div>
-          ) : bookings.length === 0 ? (
+          ) : recentBookings.length === 0 ? (
             <div className="p-16 text-center">
               <CalendarDays size={40} className="text-surface-600 mx-auto mb-3" />
               <p className="text-surface-400 font-medium">No bookings recorded yet</p>
@@ -116,7 +156,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-850/50">
-                  {bookings.map((b) => (
+                  {recentBookings.map((b) => (
                     <tr key={b.id} className="hover:bg-surface-900/40 transition-colors duration-150">
                       <td className="px-6 py-4.5">
                         <p className="font-semibold text-surface-100">{b.guestName}</p>

@@ -128,6 +128,16 @@ export async function cancelBooking(id) {
   return normalizeBooking(booking);
 }
 
+export async function checkInBooking(id) {
+  const booking = await request(`/api/bookings/${id}/check-in`, { method: 'PATCH' });
+  return normalizeBooking(booking);
+}
+
+export async function checkOutBooking(id) {
+  const booking = await request(`/api/bookings/${id}/check-out`, { method: 'PATCH' });
+  return normalizeBooking(booking);
+}
+
 export async function downloadInvoice(id) {
   const res = await fetch(`${API_URL}/api/bookings/${id}/invoice`, {
     headers: authHeaders(),
