@@ -104,6 +104,7 @@ export default function PublicBooking() {
   };
 
   const handlePay = async (bookingId, email, guestPhone) => {
+    alert("DEBUG: sending guestPhone = " + guestPhone + " for booking " + bookingId);
     setPaying(true);
     setError('');
     try {
