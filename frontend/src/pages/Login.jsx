@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hotel, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -32,6 +33,11 @@ export default function Login() {
       <div className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-gradient-to-br from-primary-600/20 to-primary-900/5 rounded-full blur-3xl animate-pulse-soft" />
       <div className="absolute bottom-1/4 -right-20 w-[400px] h-[400px] bg-gradient-to-br from-accent-500/15 to-accent-900/5 rounded-full blur-3xl animate-pulse-soft" style={{ animationDelay: '1s' }} />
       <div className="absolute top-10 right-1/4 w-[200px] h-[200px] bg-gradient-to-br from-primary-400/10 to-transparent rounded-full blur-2xl" />
+
+      {/* Theme toggle */}
+      <div className="absolute top-5 right-5 z-20">
+        <ThemeToggle />
+      </div>
 
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-md mx-4 animate-scale-in">

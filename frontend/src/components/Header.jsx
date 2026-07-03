@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header({ title, subtitle }) {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ export default function Header({ title, subtitle }) {
         <h1 className="text-2xl font-bold text-surface-100">{title}</h1>
         {subtitle && <p className="text-sm text-surface-400 mt-0.5">{subtitle}</p>}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="text-right hidden sm:block">
           <p className="text-sm font-medium text-surface-200">{user?.name}</p>
           <span
@@ -26,6 +27,7 @@ export default function Header({ title, subtitle }) {
             {user?.role}
           </span>
         </div>
+        <ThemeToggle />
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-sm font-bold shadow-glow">
           {initials}
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BedDouble, Users, CheckCircle, TrendingUp, CalendarDays } from 'lucide-react';
+import { BedDouble, Users, CheckCircle, TrendingUp, CalendarDays, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Header from '../components/Header';
 import { getStats, getBookings } from '../services/api';

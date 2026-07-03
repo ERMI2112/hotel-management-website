@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hotel, CheckCircle, Loader2, User, Phone, CalendarDays, ArrowRight, CreditCard, AlertCircle, Star, Shield, Clock, Wifi, Coffee, MapPin } from 'lucide-react';
 import { getRooms, createBooking, initiatePayment, getPublicBooking, verifyPayment } from '../services/api';
+import ThemeToggle from '../components/ThemeToggle';
 
 const roomImages = {
   single: '/images/room-single.png',
@@ -196,9 +197,12 @@ export default function PublicBooking() {
             <p className="text-[10px] text-surface-500 uppercase tracking-[0.15em] -mt-0.5">Hotel & Suites</p>
           </div>
         </div>
-        <button onClick={() => navigate('/login')} className="text-sm text-surface-500 hover:text-primary-400 transition-colors font-medium">
-          Staff Portal →
-        </button>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <button onClick={() => navigate('/login')} className="text-sm text-surface-500 hover:text-primary-400 transition-colors font-medium">
+            Staff Portal →
+          </button>
+        </div>
       </nav>
 
       {/* ─── Payment Verifying State ─── */}

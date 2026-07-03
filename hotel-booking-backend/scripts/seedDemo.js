@@ -42,13 +42,18 @@ const seedDemo = async () => {
     ];
 
     for (const entry of users) {
+      const passwordHash = await bcrypt.hash(entry.password, 10);
       const existing = await User.findOne({ email: entry.email });
       if (existing) {
-        console.log(`User already exists: ${entry.email}`);
+        existing.name = entry.name;
+        existing.phone = entry.phone;
+        existing.passwordHash = passwordHash;
+        existing.role = entry.role;
+        await existing.save();
+        console.log(`Updated user: ${entry.email}`);
         continue;
       }
 
-      const passwordHash = await bcrypt.hash(entry.password, 10);
       await User.create({
         name: entry.name,
         email: entry.email,
@@ -56,7 +61,7 @@ const seedDemo = async () => {
         passwordHash,
         role: entry.role,
       });
-      console.log(`Created user: ${entry.email} / password from env`);
+      console.log(`Created user: ${entry.email}`);
     }
 
     for (const room of demoRooms) {
