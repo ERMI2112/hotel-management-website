@@ -29,21 +29,26 @@ export default function PublicBooking() {
     window.addEventListener('unhandledrejection', handleRejection);
 
     const queryParams = new URLSearchParams(window.location.search);
-    const status = queryParams.get('status');
-    const bookingId = queryParams.get('bookingId');
     const txRef = queryParams.get('trx_ref');
+    
+    // Parse bookingId out of txRef if custom parameters were stripped by Chapa redirect
+    let bookingId = queryParams.get('bookingId');
+    if (txRef && !bookingId && txRef.startsWith('booking-')) {
+      const parts = txRef.split('-');
+      if (parts[1]) {
+        bookingId = parts[1];
+      }
+    }
 
-    if (status === 'payment-return' && bookingId) {
+    if (txRef && bookingId) {
       setCheckingPayment(true);
       // Wait 1.5 seconds for webhook to process, then verify status
       setTimeout(async () => {
         try {
-          if (txRef) {
-            try {
-              await verifyPayment(txRef);
-            } catch (err) {
-              console.warn('Manual verification error:', err);
-            }
+          try {
+            await verifyPayment(txRef);
+          } catch (err) {
+            console.warn('Manual verification error:', err);
           }
           const booking = await getPublicBooking(bookingId);
           setPaymentReturn(booking);
