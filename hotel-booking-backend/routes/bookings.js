@@ -181,4 +181,26 @@ router.get('/public/:id', async (req, res) => {
   }
 });
 
+// GET /api/bookings/public/room/:roomId/booked-dates - Get booked dates (Public for date blocking)
+router.get('/public/room/:roomId/booked-dates', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const bookings = await Booking.find({
+      room: roomId,
+      status: { $ne: 'cancelled' },
+      paymentStatus: { $ne: 'failed' }
+    }).select('checkIn checkOut');
+
+    const dates = bookings.map(b => ({
+      checkIn: b.checkIn,
+      checkOut: b.checkOut
+    }));
+
+    res.json(dates);
+  } catch (error) {
+    console.error('Fetch room booked dates error:', error);
+    res.status(500).json({ error: 'Failed to fetch booked dates' });
+  }
+});
+
 module.exports = router;

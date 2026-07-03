@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Hotel, CheckCircle, Loader2, User, Phone, CalendarDays, ArrowRight, CreditCard, AlertCircle, Star, Shield, Clock, Wifi, Coffee, MapPin } from 'lucide-react';
-import { getRooms, createBooking, initiatePayment, getPublicBooking, verifyPayment } from '../services/api';
+import { getRooms, createBooking, initiatePayment, getPublicBooking, verifyPayment, getBookedDatesForRoom } from '../services/api';
 import ThemeToggle from '../components/ThemeToggle';
 
 const roomImages = {
@@ -40,6 +40,31 @@ export default function PublicBooking() {
   const [paymentReturn, setPaymentReturn] = useState(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [crashError, setCrashError] = useState(null);
+  const [bookedDates, setBookedDates] = useState([]);
+  const [loadingDates, setLoadingDates] = useState(false);
+
+  useEffect(() => {
+    if (!form.roomId) {
+      setBookedDates([]);
+      return;
+    }
+    setLoadingDates(true);
+    getBookedDatesForRoom(form.roomId)
+      .then((dates) => setBookedDates(dates))
+      .catch((err) => console.warn('Could not load booked dates:', err))
+      .finally(() => setLoadingDates(false));
+  }, [form.roomId]);
+
+  const isOverlapping = (start, end) => {
+    if (!start || !end || bookedDates.length === 0) return false;
+    const checkInDate = new Date(`${start}T12:00:00.000Z`);
+    const checkOutDate = new Date(`${end}T12:00:00.000Z`);
+    return bookedDates.some((b) => {
+      const bIn = new Date(b.checkIn);
+      const bOut = new Date(b.checkOut);
+      return checkInDate < bOut && checkOutDate > bIn;
+    });
+  };
 
   useEffect(() => {
     const handleGlobalError = (event) => {
@@ -113,6 +138,10 @@ export default function PublicBooking() {
     setError('');
     if (!form.roomId) { setError('Please select a room'); return; }
     if (nights <= 0) { setError('Check-out must be after check-in'); return; }
+    if (isOverlapping(form.checkIn, form.checkOut)) {
+      setError('The selected dates are already booked for this room. Please choose another date range.');
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await createBooking({
@@ -425,16 +454,66 @@ export default function PublicBooking() {
               </div>
 
               <div className="glass-card p-6 sm:p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="label-text flex items-center gap-1.5"><CalendarDays size={13} /> Check-in</label>
-                    <input type="date" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} className="input-field" required />
-                  </div>
-                  <div>
-                    <label className="label-text flex items-center gap-1.5"><CalendarDays size={13} /> Check-out</label>
-                    <input type="date" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} className="input-field" required />
-                  </div>
-                </div>
+                {!form.roomId ? (
+                  <p className="text-sm text-surface-500 italic text-center py-2">Please select a room above first to choose dates.</p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <div>
+                        <label className="label-text flex items-center gap-1.5"><CalendarDays size={13} /> Check-in</label>
+                        <input 
+                          type="date" 
+                          min={new Date().toISOString().split('T')[0]}
+                          value={form.checkIn} 
+                          onChange={(e) => setForm({ ...form, checkIn: e.target.value })} 
+                          className="input-field" 
+                          required 
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text flex items-center gap-1.5"><CalendarDays size={13} /> Check-out</label>
+                        <input 
+                          type="date" 
+                          min={form.checkIn || new Date().toISOString().split('T')[0]}
+                          value={form.checkOut} 
+                          onChange={(e) => setForm({ ...form, checkOut: e.target.value })} 
+                          className="input-field" 
+                          required 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Overlap alert */}
+                    {isOverlapping(form.checkIn, form.checkOut) && (
+                      <div className="mt-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2 animate-fade-in">
+                        <AlertCircle size={14} className="shrink-0" />
+                        <span>These dates are already booked for this room. Please select another date range.</span>
+                      </div>
+                    )}
+
+                    {/* Booked dates list */}
+                    {bookedDates.length > 0 && (
+                      <div className="mt-5 text-xs bg-surface-800/40 p-4 rounded-xl border border-surface-700/20">
+                        <p className="font-semibold text-surface-300 mb-2 flex items-center gap-1.5">
+                          <Clock size={12} className="text-accent-400" />
+                          Unavailable Dates (Already Booked):
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-surface-400">
+                          {bookedDates.map((range, idx) => {
+                            const start = new Date(range.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            const end = new Date(range.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            return (
+                              <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/20 border border-surface-700/10">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                <span>{start} — {end}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </section>
 

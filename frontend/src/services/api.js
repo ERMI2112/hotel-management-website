@@ -192,3 +192,10 @@ export async function verifyPayment(txRef) {
   });
   return result;
 }
+
+export async function getBookedDatesForRoom(roomId) {
+  const dates = await request(`/api/bookings/public/room/${roomId}/booked-dates`, {
+    auth: false,
+  });
+  return dates;
+}
