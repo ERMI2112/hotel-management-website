@@ -30,10 +30,13 @@ export default function PublicBooking() {
 
     const queryParams = new URLSearchParams(window.location.search);
     const txRefFromUrl = queryParams.get('trx_ref') || queryParams.get('tx_ref') || queryParams.get('txRef');
-    const isPaymentReturn = queryParams.get('status') === 'payment-return' || Boolean(txRefFromUrl);
     
+    // Check localStorage for fallback values (in case redirect dropped query string)
+    const storedBookingId = localStorage.getItem('pending_booking_id');
+    const storedTxRef = localStorage.getItem('pending_tx_ref');
+
     // Parse bookingId out of txRef if custom parameters were stripped by Chapa redirect
-    let bookingId = queryParams.get('bookingId');
+    let bookingId = queryParams.get('bookingId') || storedBookingId;
     if (txRefFromUrl && !bookingId && txRefFromUrl.startsWith('booking-')) {
       const parts = txRefFromUrl.split('-');
       if (parts[1]) {
@@ -41,14 +44,18 @@ export default function PublicBooking() {
       }
     }
 
+    const txRef = txRefFromUrl || storedTxRef;
+    const isPaymentReturn = queryParams.get('status') === 'payment-return' || Boolean(txRef);
+
     if (isPaymentReturn && bookingId) {
       setCheckingPayment(true);
+      // Clear localStorage immediately to prevent loops on reload
+      localStorage.removeItem('pending_booking_id');
+      localStorage.removeItem('pending_tx_ref');
+
       // Wait 1.5 seconds for webhook to process, then verify status
       setTimeout(async () => {
         try {
-          const bookingBeforeVerify = await getPublicBooking(bookingId);
-          const txRef = txRefFromUrl || bookingBeforeVerify.chapaReference;
-
           try {
             if (txRef) {
               await verifyPayment(txRef);
@@ -56,7 +63,6 @@ export default function PublicBooking() {
           } catch (err) {
             console.warn('Manual verification error:', err);
           }
-
           const booking = await getPublicBooking(bookingId);
           setPaymentReturn(booking);
         } catch (err) {
@@ -122,6 +128,11 @@ export default function PublicBooking() {
       const returnUrl = `${window.location.origin}${window.location.pathname}?status=payment-return&bookingId=${bookingId}`;
       const res = await initiatePayment(bookingId, { email, guestPhone, returnUrl });
       if (res.checkoutUrl) {
+        // Save pending booking & txRef to localStorage before redirecting
+        localStorage.setItem('pending_booking_id', bookingId);
+        if (res.txRef) {
+          localStorage.setItem('pending_tx_ref', res.txRef);
+        }
         window.location.href = res.checkoutUrl;
       } else {
         throw new Error('Failed to retrieve Chapa checkout URL');
