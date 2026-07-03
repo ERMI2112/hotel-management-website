@@ -170,11 +170,11 @@ export async function getStats() {
   };
 }
 
-export async function initiatePayment(bookingId, { email, returnUrl } = {}) {
+export async function initiatePayment(bookingId, { email, guestPhone, returnUrl } = {}) {
   const result = await request(`/api/payments/bookings/${bookingId}/initiate-payment`, {
     auth: false,
     method: 'POST',
-    body: JSON.stringify({ email, returnUrl }),
+    body: JSON.stringify({ email, guestPhone, returnUrl }),
   });
   return result;
 }

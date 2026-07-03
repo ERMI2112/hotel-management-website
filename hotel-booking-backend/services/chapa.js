@@ -115,28 +115,29 @@ const verifyPayment = async (txRef) => {
 
 /**
  * Verify webhook signature from Chapa
- * @param {Object} payload - Webhook payload
+ * @param {Buffer|string} rawBody - Raw webhook body as received from Chapa
  * @param {string} signature - Signature from x-chapa-signature header
  * @param {string} legacySignature - Signature from chapa-signature header (fallback)
  * @returns {boolean} Whether signature is valid
  */
-const verifyWebhookSignature = (payload, signature, legacySignature) => {
+const verifyWebhookSignature = (rawBody, signature, legacySignature) => {
   try {
-    const webhookSecret = process.env.CHAPA_WEBHOOK_SECRET || process.env.CHAPA_SECRET_KEY;
+    const webhookSecret = process.env.CHAPA_WEBHOOK_SECRET;
     
     if (!webhookSecret) {
-      console.warn('⚠️  Webhook signing key not configured - webhook signature verification disabled');
-      return true; // Allow in development, but log warning
+      console.error('❌ CHAPA_WEBHOOK_SECRET not configured - rejecting webhook');
+      return false;
     }
 
     // Calculate expected hash
+    const bodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(String(rawBody ?? ''), 'utf8');
     const hash = crypto
       .createHmac('sha256', webhookSecret)
-      .update(JSON.stringify(payload))
+      .update(bodyBuffer)
       .digest('hex');
 
     // Check if either signature matches
-    const isValid = (signature && hash === signature) || (legacySignature && hash === legacySignature);
+    const isValid = Boolean((signature && hash === signature) || (legacySignature && hash === legacySignature));
 
     if (!isValid) {
       console.error('❌ Webhook signature verification failed');

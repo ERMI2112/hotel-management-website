@@ -53,43 +53,47 @@ export default function BookingsList() {
   });
 
   const statusClass = (s) => {
-    const map = { confirmed: 'status-confirmed', cancelled: 'status-cancelled', checked_out: 'status-checked_out' };
-    return map[s] || 'status-badge bg-surface-500/15 text-surface-400';
+    const map = { 
+      confirmed: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-success-500/10 text-green-400 border border-green-500/20', 
+      cancelled: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-danger-500/10 text-red-400 border border-red-500/20', 
+      checked_out: 'px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-800 text-surface-400 border border-surface-700/50' 
+    };
+    return map[s] || 'px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-800 text-surface-400';
   };
 
   const paymentClass = (p) => {
     const map = {
-      paid: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-green-500/15 text-green-300 border border-green-500/20',
-      pending: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/20',
-      failed: 'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-red-500/15 text-red-300 border border-red-500/20',
+      paid: 'px-2.5 py-0.5 rounded-md text-xs font-bold bg-green-500/10 text-green-400 border border-green-500/20',
+      pending: 'px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      failed: 'px-2.5 py-0.5 rounded-md text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20',
     };
     return map[p] || map.pending;
   };
 
   return (
-    <div className="animate-fade-in">
-      <Header title="Bookings" subtitle="All reservations and their status" />
+    <div className="animate-fade-in flex-1 bg-surface-950">
+      <Header title="Bookings" subtitle="Manage reservations, billing, and check-in statuses" />
 
-      <div className="p-6 lg:p-8">
+      <div className="p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500" />
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-550" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search guest name, phone, or room..."
-              className="input-field pl-11"
+              className="input-field pl-11 !bg-surface-900/50 border-surface-800 hover:border-surface-700 focus:border-primary-500/50"
             />
           </div>
-          <div className="relative">
-            <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-500 pointer-events-none" />
+          <div className="relative w-full sm:w-auto">
+            <Filter size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-550 pointer-events-none" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="select-field pl-10 pr-8 w-full sm:w-48"
+              className="select-field pl-10 pr-8 w-full sm:w-52 !bg-surface-900/50 border-surface-800 hover:border-surface-700 focus:border-primary-500/50"
             >
-              <option value="all">All Status</option>
+              <option value="all">All Reservation Status</option>
               <option value="confirmed">Confirmed</option>
               <option value="cancelled">Cancelled</option>
               <option value="checked_out">Checked Out</option>
@@ -100,75 +104,75 @@ export default function BookingsList() {
         {/* Table */}
         <div className="glass-card overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-20">
+              <Loader2 size={32} className="text-primary-400 animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center">
-              <CalendarDays size={40} className="text-surface-600 mx-auto mb-3" />
-              <p className="text-surface-400">No bookings found</p>
-              <p className="text-xs text-surface-500 mt-1">Try adjusting your search or filters</p>
+            <div className="py-20 text-center">
+              <CalendarDays size={44} className="text-surface-700 mx-auto mb-4" />
+              <p className="text-surface-400 font-semibold text-lg">No bookings match your criteria</p>
+              <p className="text-xs text-surface-500 mt-1.5">Try adjusting your filters or search terms</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-surface-700/30">
-                    <th className="table-header">Guest</th>
-                    <th className="table-header">Room</th>
-                    <th className="table-header">Check-in</th>
-                    <th className="table-header">Check-out</th>
-                    <th className="table-header">Status</th>
-                    <th className="table-header">Payment</th>
-                    <th className="table-header text-right">Total</th>
-                    <th className="table-header text-right">Action</th>
+                  <tr className="border-b border-surface-850 bg-surface-900/30">
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest">Guest</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest">Room</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest">Check-in</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest">Check-out</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest">Payment</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest text-right">Total</th>
+                    <th className="px-6 py-4 text-xs font-bold text-surface-400 uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-surface-850/50">
                   {filtered.map((b, i) => (
                     <tr
                       key={b.id}
-                      className="border-b border-surface-700/10 hover:bg-surface-800/30 transition-colors animate-slide-up"
-                      style={{ animationDelay: `${i * 0.03}s`, animationFillMode: 'both' }}
+                      className="hover:bg-surface-900/40 transition-colors duration-150 animate-slide-up"
+                      style={{ animationDelay: `${i * 0.02}s`, animationFillMode: 'both' }}
                     >
-                      <td className="table-cell">
-                        <p className="font-medium text-surface-100">{b.guestName}</p>
-                        <p className="text-xs text-surface-500">{b.guestPhone}</p>
+                      <td className="px-6 py-4.5">
+                        <p className="font-semibold text-surface-100">{b.guestName}</p>
+                        <p className="text-xs text-surface-500 mt-0.5">{b.guestPhone}</p>
                       </td>
-                      <td className="table-cell">
-                        <span className="px-2.5 py-1 rounded-lg bg-surface-800/60 text-surface-300 text-xs font-mono font-medium">
-                          #{b.roomDetails?.roomNumber || '—'}
+                      <td className="px-6 py-4.5">
+                        <span className="px-2.5 py-1 rounded-lg bg-surface-800 text-surface-200 text-xs font-mono border border-surface-700/40">
+                          Room {b.roomDetails?.roomNumber || '—'}
                         </span>
                       </td>
-                      <td className="table-cell text-surface-300 text-sm">
+                      <td className="px-6 py-4.5 text-sm text-surface-300">
                         {format(new Date(b.checkIn), 'MMM dd, yyyy')}
                       </td>
-                      <td className="table-cell text-surface-300 text-sm">
+                      <td className="px-6 py-4.5 text-sm text-surface-300">
                         {format(new Date(b.checkOut), 'MMM dd, yyyy')}
                       </td>
-                      <td className="table-cell">
+                      <td className="px-6 py-4.5">
                         <span className={statusClass(b.status)}>
                           {b.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="table-cell">
+                      <td className="px-6 py-4.5">
                         <span className={paymentClass(b.paymentStatus)}>
                           {b.paymentStatus === 'paid' ? '✓ Paid' : b.paymentStatus === 'failed' ? '✗ Failed' : '⏳ Pending'}
                         </span>
                       </td>
-                      <td className="table-cell text-right">
-                        <span className="font-semibold text-surface-100">{b.totalPrice?.toLocaleString()}</span>
-                        <span className="text-xs text-surface-500 ml-1">ETB</span>
+                      <td className="px-6 py-4.5 text-right">
+                        <span className="text-base font-bold text-surface-100">{b.totalPrice?.toLocaleString()}</span>
+                        <span className="text-[10px] text-surface-500 ml-1.5 uppercase font-medium">ETB</span>
                       </td>
-                      <td className="table-cell text-right">
+                      <td className="px-6 py-4.5 text-right">
                         <div className="inline-flex items-center gap-2">
                           {b.status !== 'cancelled' && (
                             <button
                               onClick={() => handleInvoice(b.id)}
                               disabled={downloading === b.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
                                 text-primary-300 bg-primary-500/10 border border-primary-500/20
-                                hover:bg-primary-500/20 transition-all disabled:opacity-50"
+                                hover:bg-primary-500/25 transition-all disabled:opacity-50"
                             >
                               {downloading === b.id ? (
                                 <Loader2 size={12} className="animate-spin" />
@@ -182,9 +186,9 @@ export default function BookingsList() {
                             <button
                               onClick={() => handleCancel(b.id)}
                               disabled={cancelling === b.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
                                 text-red-400 bg-red-500/10 border border-red-500/20
-                                hover:bg-red-500/20 transition-all disabled:opacity-50"
+                                hover:bg-red-500/25 transition-all disabled:opacity-50"
                             >
                               {cancelling === b.id ? (
                                 <Loader2 size={12} className="animate-spin" />
@@ -207,9 +211,9 @@ export default function BookingsList() {
         {/* Summary */}
         {!loading && filtered.length > 0 && (
           <div className="flex items-center justify-between mt-4 px-2 text-xs text-surface-500">
-            <span>{filtered.length} booking{filtered.length !== 1 ? 's' : ''} shown</span>
+            <span>Showing {filtered.length} booking{filtered.length !== 1 ? 's' : ''}</span>
             <span>
-              Total revenue: {filtered.filter((b) => b.status !== 'cancelled').reduce((s, b) => s + (b.totalPrice || 0), 0).toLocaleString()} ETB
+              Total Revenue: <span className="font-bold text-surface-300">{filtered.filter((b) => b.status !== 'cancelled').reduce((s, b) => s + (b.totalPrice || 0), 0).toLocaleString()} ETB</span>
             </span>
           </div>
         )}

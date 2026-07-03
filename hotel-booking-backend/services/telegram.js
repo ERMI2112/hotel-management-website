@@ -51,4 +51,31 @@ _Booking ID: ${booking._id}_
   }
 };
 
-module.exports = { initTelegramBot, notifyNewBooking };
+// Send payment receipt notification to owner
+const notifyPaymentReceived = async (booking, room) => {
+  if (!bot || !process.env.OWNER_CHAT_ID) {
+    console.warn('⚠️  Telegram notification skipped - bot not configured');
+    return;
+  }
+
+  try {
+    const message = `
+💳 *Payment Received* ✅
+
+*Room:* ${room.roomNumber} (${room.type})
+*Guest:* ${booking.guestName}
+*Phone:* ${booking.guestPhone}
+*Amount Paid:* ${booking.totalPrice} ETB
+*Transaction Ref:* \`${booking.chapaReference || 'N/A'}\`
+
+_Booking ID: ${booking._id}_
+    `.trim();
+
+    await bot.sendMessage(process.env.OWNER_CHAT_ID, message, { parse_mode: 'Markdown' });
+    console.log('✅ Telegram payment notification sent');
+  } catch (error) {
+    console.error('❌ Failed to send Telegram payment notification:', error.message);
+  }
+};
+
+module.exports = { initTelegramBot, notifyNewBooking, notifyPaymentReceived };

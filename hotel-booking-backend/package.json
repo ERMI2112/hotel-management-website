@@ -7,7 +7,10 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node scripts/seedAdmin.js",
-    "seed:demo": "node scripts/seedDemo.js"
+    "seed:demo": "node scripts/seedDemo.js",
+    "test:webhook-signature": "node tests/testWebhookSignature.js",
+    "test:webhook-raw": "node tests/testWebhookRawBody.js",
+    "test:payment-ownership": "node tests/testPaymentInitiationOwnership.js"
   },
   "keywords": ["hotel", "booking", "express", "mongodb"],
   "author": "",

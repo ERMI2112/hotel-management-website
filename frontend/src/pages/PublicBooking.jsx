@@ -1,9 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Hotel, CheckCircle, Loader2, User, Phone, CalendarDays, ArrowRight, CreditCard, AlertCircle } from 'lucide-react';
+import { Hotel, CheckCircle, Loader2, User, Phone, CalendarDays, ArrowRight, CreditCard, AlertCircle, Star, Shield, Clock, Wifi, Coffee, MapPin } from 'lucide-react';
 import { getRooms, createBooking, initiatePayment, getPublicBooking, verifyPayment } from '../services/api';
 
-const typeLabels = { single: '🛏️ Single', double: '🛏️🛏️ Double', suite: '👑 Suite' };
+const roomImages = {
+  single: '/images/room-single.png',
+  double: '/images/room-double.png',
+  suite: '/images/room-suite.png',
+};
+
+const roomLabels = {
+  single: 'Standard Room',
+  double: 'Double Room',
+  suite: 'Premium Suite',
+};
+
+const roomDescriptions = {
+  single: 'Cozy and modern — perfect for solo travelers seeking comfort and convenience.',
+  double: 'Spacious retreat with twin beds — ideal for families or friends traveling together.',
+  suite: 'Our finest accommodation with separate living area, premium amenities, and panoramic views.',
+};
+
+const roomAmenities = {
+  single: ['Free Wi-Fi', 'Air Conditioning', 'Room Service'],
+  double: ['Free Wi-Fi', 'Air Conditioning', 'Room Service', 'Mini Bar'],
+  suite: ['Free Wi-Fi', 'Air Conditioning', 'Room Service', 'Mini Bar', 'Lounge Area', 'City View'],
+};
 
 export default function PublicBooking() {
   const navigate = useNavigate();
@@ -31,11 +53,9 @@ export default function PublicBooking() {
     const queryParams = new URLSearchParams(window.location.search);
     const txRefFromUrl = queryParams.get('trx_ref') || queryParams.get('tx_ref') || queryParams.get('txRef');
     
-    // Check localStorage for fallback values (in case redirect dropped query string)
     const storedBookingId = localStorage.getItem('pending_booking_id');
     const storedTxRef = localStorage.getItem('pending_tx_ref');
 
-    // Parse bookingId out of txRef if custom parameters were stripped by Chapa redirect
     let bookingId = queryParams.get('bookingId') || storedBookingId;
     if (txRefFromUrl && !bookingId && txRefFromUrl.startsWith('booking-')) {
       const parts = txRefFromUrl.split('-');
@@ -49,11 +69,9 @@ export default function PublicBooking() {
 
     if (isPaymentReturn && bookingId) {
       setCheckingPayment(true);
-      // Clear localStorage immediately to prevent loops on reload
       localStorage.removeItem('pending_booking_id');
       localStorage.removeItem('pending_tx_ref');
 
-      // Wait 1.5 seconds for webhook to process, then verify status
       setTimeout(async () => {
         try {
           try {
@@ -116,7 +134,6 @@ export default function PublicBooking() {
     setSuccess(null);
     setPaymentReturn(null);
     setError('');
-    // Remove query params from URL
     window.history.replaceState({}, document.title, window.location.pathname);
     getRooms({ publicOnly: true }).then((r) => setRooms(r));
   };
@@ -128,7 +145,6 @@ export default function PublicBooking() {
       const returnUrl = `${window.location.origin}${window.location.pathname}?status=payment-return&bookingId=${bookingId}`;
       const res = await initiatePayment(bookingId, { email, guestPhone, returnUrl });
       if (res.checkoutUrl) {
-        // Save pending booking & txRef to localStorage before redirecting
         localStorage.setItem('pending_booking_id', bookingId);
         if (res.txRef) {
           localStorage.setItem('pending_tx_ref', res.txRef);
@@ -162,101 +178,94 @@ export default function PublicBooking() {
     );
   }
 
+  /* ─── Render ───────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-surface-950 relative overflow-hidden">
-      {/* Background orbs */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-gradient-to-br from-primary-600/10 to-transparent rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-gradient-to-br from-accent-500/8 to-transparent rounded-full blur-3xl" />
+      {/* Ambient background */}
+      <div className="absolute top-[-200px] left-[-100px] w-[700px] h-[700px] bg-gradient-to-br from-primary-700/8 to-transparent rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-150px] right-[-50px] w-[600px] h-[600px] bg-gradient-to-br from-accent-600/6 to-transparent rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5 border-b border-surface-700/20">
+      {/* ─── Navbar ─── */}
+      <nav className="relative z-20 flex items-center justify-between px-6 sm:px-10 py-4 border-b border-surface-800/60 bg-surface-950/80 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow">
-            <Hotel size={18} className="text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-glow">
+            <Hotel size={20} className="text-white" />
           </div>
-          <span className="font-bold text-lg bg-gradient-to-r from-primary-300 to-accent-400 bg-clip-text text-transparent">StaySync</span>
+          <div>
+            <span className="font-bold text-lg text-surface-100 tracking-tight">StaySync</span>
+            <p className="text-[10px] text-surface-500 uppercase tracking-[0.15em] -mt-0.5">Hotel & Suites</p>
+          </div>
         </div>
-        <button onClick={() => navigate('/login')} className="text-sm text-surface-400 hover:text-primary-400 transition-colors font-medium">
-          Staff Login →
+        <button onClick={() => navigate('/login')} className="text-sm text-surface-500 hover:text-primary-400 transition-colors font-medium">
+          Staff Portal →
         </button>
       </nav>
 
-      {/* Hero */}
-      <div className="relative z-10 text-center py-16 px-6 animate-fade-in">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-          <span className="bg-gradient-to-r from-primary-300 via-primary-200 to-accent-400 bg-clip-text text-transparent">
-            Book Your Perfect Stay
-          </span>
-        </h1>
-        <p className="text-surface-400 text-lg max-w-md mx-auto">
-          Experience comfort and luxury at competitive prices
-        </p>
-      </div>
-
-      {/* Booking Form or payment states */}
+      {/* ─── Payment Verifying State ─── */}
       {checkingPayment ? (
-        <div className="relative z-10 max-w-md mx-auto px-6 pb-20 animate-scale-in">
-          <div className="glass-card p-10 text-center">
-            <Loader2 size={36} className="text-primary-400 animate-spin mx-auto mb-6" />
-            <h2 className="text-xl font-bold text-surface-100 mb-2">Verifying Payment Status</h2>
-            <p className="text-surface-400">Please wait while we confirm your transaction with Chapa...</p>
+        <div className="relative z-10 flex items-center justify-center min-h-[70vh] px-6">
+          <div className="glass-card p-12 text-center max-w-md w-full animate-scale-in">
+            <div className="w-16 h-16 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center mx-auto mb-6">
+              <Loader2 size={28} className="text-primary-400 animate-spin" />
+            </div>
+            <h2 className="text-xl font-semibold text-surface-100 mb-2">Verifying your payment</h2>
+            <p className="text-surface-400 text-sm leading-relaxed">Please wait while we confirm your transaction with Chapa. This usually takes a few seconds.</p>
           </div>
         </div>
+
       ) : paymentReturn ? (
-        /* Payment Return Feedback State */
-        <div className="relative z-10 max-w-md mx-auto px-6 pb-20 animate-scale-in">
-          <div className="glass-card p-10 text-center">
+        /* ─── Payment Result State ─── */
+        <div className="relative z-10 flex items-center justify-center min-h-[70vh] px-6">
+          <div className="glass-card p-10 text-center max-w-md w-full animate-scale-in">
             {paymentReturn.paymentStatus === 'paid' ? (
               <>
-                <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 rounded-full bg-green-500/10 border-2 border-green-500/30 flex items-center justify-center mx-auto mb-6">
                   <CheckCircle size={36} className="text-green-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Successful!</h2>
-                <p className="text-surface-400 mb-6">Thank you, {paymentReturn.guestName}. Your payment was processed successfully.</p>
+                <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Confirmed</h2>
+                <p className="text-surface-400 mb-8 text-sm">Thank you, {paymentReturn.guestName}. Your reservation is fully confirmed and paid.</p>
               </>
             ) : paymentReturn.paymentStatus === 'failed' ? (
               <>
-                <div className="w-20 h-20 rounded-full bg-red-500/15 border-2 border-red-500/40 flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mx-auto mb-6">
                   <AlertCircle size={36} className="text-red-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Failed</h2>
-                <p className="text-surface-400 mb-6">We could not process your payment. Please try again or contact staff.</p>
+                <p className="text-surface-400 mb-8 text-sm">We couldn't process your payment. You can try again or pay at the property.</p>
               </>
             ) : (
               <>
-                <div className="w-20 h-20 rounded-full bg-amber-500/15 border-2 border-amber-500/40 flex items-center justify-center mx-auto mb-6">
-                  <Loader2 size={36} className="text-amber-400 animate-spin" />
+                <div className="w-20 h-20 rounded-full bg-amber-500/10 border-2 border-amber-500/30 flex items-center justify-center mx-auto mb-6">
+                  <Clock size={36} className="text-amber-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-surface-100 mb-2">Payment Pending</h2>
-                <p className="text-surface-400 mb-6">We are waiting for payment confirmation from Chapa. If you have already paid, this will update automatically soon.</p>
+                <p className="text-surface-400 mb-8 text-sm">We're waiting for confirmation from Chapa. This will update automatically.</p>
               </>
             )}
 
-            <div className="p-5 rounded-xl bg-surface-800/40 text-left space-y-3 mb-8">
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Room</span>
-                <span className="text-surface-200 font-mono">#{paymentReturn.roomDetails?.roomNumber || paymentReturn.room?.roomNumber || 'N/A'}</span>
+            <div className="rounded-xl bg-surface-800/50 border border-surface-700/30 divide-y divide-surface-700/20 text-left mb-8">
+              <div className="flex justify-between items-center px-5 py-3.5">
+                <span className="text-sm text-surface-400">Room</span>
+                <span className="text-sm text-surface-200 font-medium">#{paymentReturn.roomDetails?.roomNumber || paymentReturn.room?.roomNumber || 'N/A'}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Payment Status</span>
-                <span className={`px-2 py-0.5 rounded text-xs font-bold capitalize
-                  ${paymentReturn.paymentStatus === 'paid' ? 'bg-green-500/20 text-green-300' : 
-                    paymentReturn.paymentStatus === 'failed' ? 'bg-red-500/20 text-red-300' : 
-                    'bg-amber-500/20 text-amber-300'}`}
+              <div className="flex justify-between items-center px-5 py-3.5">
+                <span className="text-sm text-surface-400">Status</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize
+                  ${paymentReturn.paymentStatus === 'paid' ? 'bg-green-500/15 text-green-400' : 
+                    paymentReturn.paymentStatus === 'failed' ? 'bg-red-500/15 text-red-400' : 
+                    'bg-amber-500/15 text-amber-400'}`}
                 >
                   {paymentReturn.paymentStatus}
                 </span>
               </div>
-              <div className="flex justify-between text-sm pt-3 border-t border-surface-700/30">
-                <span className="text-surface-400 font-medium">Total</span>
-                <span className="text-surface-100 font-bold text-lg">{paymentReturn.totalPrice?.toLocaleString()} ETB</span>
+              <div className="flex justify-between items-center px-5 py-4">
+                <span className="text-sm text-surface-400 font-medium">Total Paid</span>
+                <span className="text-xl font-bold text-surface-100">{paymentReturn.totalPrice?.toLocaleString()} <span className="text-sm font-normal text-surface-400">ETB</span></span>
               </div>
             </div>
 
             {error && (
-              <div className="px-4 py-3 mb-6 rounded-xl bg-danger-500/10 border border-danger-500/30 text-red-400 text-sm">
-                {error}
-              </div>
+              <div className="px-4 py-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
             )}
 
             {paymentReturn.paymentStatus !== 'paid' && (
@@ -269,146 +278,253 @@ export default function PublicBooking() {
                 Try Paying Again
               </button>
             )}
-            
             <button onClick={resetForm} className="btn-ghost w-full">Book Another Room</button>
           </div>
         </div>
-      ) : !success ? (
-        <div className="relative z-10 max-w-3xl mx-auto px-6 pb-20 animate-slide-up">
-          <form onSubmit={handleSubmit} className="glass-card p-8 space-y-8">
-            {/* Guest Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div>
-                <label className="label-text flex items-center gap-2"><User size={14} /> Guest Name</label>
-                <input value={form.guestName} onChange={(e) => setForm({ ...form, guestName: e.target.value })} className="input-field" placeholder="Full name" required />
-              </div>
-              <div>
-                <label className="label-text flex items-center gap-2"><Phone size={14} /> Phone Number</label>
-                <input value={form.guestPhone} onChange={(e) => setForm({ ...form, guestPhone: e.target.value })} className="input-field" placeholder="+251..." required />
-              </div>
-            </div>
 
-            {/* Room Selection */}
-            <div>
-              <label className="label-text flex items-center gap-2 mb-3">Select a Room</label>
+      ) : !success ? (
+        /* ─── Main Booking Flow ─── */
+        <div className="relative z-10">
+          {/* Hero */}
+          <div className="text-center pt-14 pb-10 px-6 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-300 text-xs font-medium mb-6 tracking-wide">
+              <Star size={12} /> Trusted by 500+ guests
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
+              <span className="text-surface-100">Find your perfect </span>
+              <span className="bg-gradient-to-r from-accent-400 to-accent-500 bg-clip-text text-transparent">room</span>
+            </h1>
+            <p className="text-surface-400 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">
+              Premium rooms at competitive prices. Book directly for the best rate — no middlemen, no hidden fees.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="max-w-5xl mx-auto px-4 sm:px-6 pb-24 space-y-10 animate-slide-up">
+            
+            {/* ─── Room Selection ─── */}
+            <section>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-7 h-7 rounded-lg bg-primary-500/15 flex items-center justify-center">
+                  <span className="text-primary-400 font-bold text-sm">1</span>
+                </div>
+                <h2 className="text-lg font-semibold text-surface-200">Select your room</h2>
+              </div>
+
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 size={24} className="text-primary-400 animate-spin" />
                 </div>
               ) : rooms.length === 0 ? (
-                <div className="text-center py-8 text-surface-500">No rooms available right now</div>
+                <div className="glass-card p-12 text-center">
+                  <p className="text-surface-400">No rooms available right now. Please check back later.</p>
+                </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {rooms.map((room) => (
-                    <button
-                      key={room.id}
-                      type="button"
-                      onClick={() => setForm({ ...form, roomId: room.id })}
-                      className={`p-4 rounded-xl border text-left transition-all duration-200
-                        ${form.roomId === room.id
-                          ? 'border-primary-500/60 bg-primary-500/10 shadow-glow ring-1 ring-primary-500/30'
-                          : 'border-surface-700/40 bg-surface-800/30 hover:border-surface-600/60 hover:bg-surface-800/50'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono font-bold text-surface-100">#{room.roomNumber}</span>
-                        {form.roomId === room.id && <CheckCircle size={16} className="text-primary-400" />}
-                      </div>
-                      <p className="text-xs text-surface-400 mb-1">{typeLabels[room.type]}</p>
-                      <p className="text-lg font-bold text-surface-100">
-                        {room.pricePerNight.toLocaleString()} <span className="text-xs text-surface-500 font-normal">ETB/night</span>
-                      </p>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {rooms.map((room) => {
+                    const isSelected = form.roomId === room.id;
+                    const type = room.type || 'single';
+                    return (
+                      <button
+                        key={room.id}
+                        type="button"
+                        onClick={() => setForm({ ...form, roomId: room.id })}
+                        className={`group relative text-left rounded-2xl overflow-hidden transition-all duration-300 border-2
+                          ${isSelected
+                            ? 'border-accent-500/70 shadow-[0_0_30px_rgba(255,152,0,0.12)] scale-[1.01]'
+                            : 'border-surface-700/30 hover:border-surface-600/50 hover:shadow-glass hover:-translate-y-1'
+                          }`}
+                      >
+                        {/* Room Image */}
+                        <div className="relative h-44 overflow-hidden bg-surface-800">
+                          <img
+                            src={roomImages[type] || roomImages.single}
+                            alt={roomLabels[type]}
+                            className={`w-full h-full object-cover transition-transform duration-500 ${isSelected ? 'scale-105' : 'group-hover:scale-105'}`}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-surface-950/20 to-transparent" />
+                          
+                          {/* Room number badge */}
+                          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-xs font-mono text-white/90">
+                            Room {room.roomNumber}
+                          </div>
+
+                          {isSelected && (
+                            <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-accent-500 flex items-center justify-center shadow-glow-accent">
+                              <CheckCircle size={16} className="text-white" />
+                            </div>
+                          )}
+
+                          {/* Price overlay */}
+                          <div className="absolute bottom-3 right-3">
+                            <div className="px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10">
+                              <span className="text-xl font-bold text-white">{room.pricePerNight.toLocaleString()}</span>
+                              <span className="text-white/60 text-xs ml-1">ETB/night</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Room Info */}
+                        <div className="p-5 bg-surface-900/80">
+                          <h3 className="font-semibold text-surface-100 mb-1">{roomLabels[type]}</h3>
+                          <p className="text-xs text-surface-400 leading-relaxed mb-3">{roomDescriptions[type]}</p>
+                          
+                          {/* Amenities */}
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {(roomAmenities[type] || []).slice(0, 4).map((a) => (
+                              <span key={a} className="px-2 py-0.5 text-[10px] rounded-full bg-surface-800 text-surface-400 border border-surface-700/40">{a}</span>
+                            ))}
+                          </div>
+                          
+                          {/* Trust line */}
+                          <div className="flex items-center gap-1.5 text-[11px] text-green-400/80">
+                            <Shield size={11} />
+                            <span>Free cancellation · Pay online or at property</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-            </div>
+            </section>
 
-            {/* Dates */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div>
-                <label className="label-text flex items-center gap-2"><CalendarDays size={14} /> Check-in</label>
-                <input type="date" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} className="input-field" required />
+            {/* ─── Guest Details ─── */}
+            <section>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-7 h-7 rounded-lg bg-primary-500/15 flex items-center justify-center">
+                  <span className="text-primary-400 font-bold text-sm">2</span>
+                </div>
+                <h2 className="text-lg font-semibold text-surface-200">Your details</h2>
               </div>
-              <div>
-                <label className="label-text flex items-center gap-2"><CalendarDays size={14} /> Check-out</label>
-                <input type="date" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} className="input-field" required />
-              </div>
-            </div>
 
-            {/* Price Summary */}
-            {total > 0 && (
-              <div className="p-5 rounded-xl bg-gradient-to-r from-primary-600/10 to-accent-500/10 border border-primary-500/20 animate-fade-in">
-                <div className="flex items-center justify-between">
+              <div className="glass-card p-6 sm:p-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <p className="text-sm text-surface-400">
-                      {nights} night{nights > 1 ? 's' : ''} × {selectedRoom?.pricePerNight.toLocaleString()} ETB
-                    </p>
-                    <p className="text-xs text-surface-500 mt-0.5">Room #{selectedRoom?.roomNumber} · {selectedRoom?.type}</p>
+                    <label className="label-text flex items-center gap-1.5"><User size={13} /> Full Name</label>
+                    <input value={form.guestName} onChange={(e) => setForm({ ...form, guestName: e.target.value })} className="input-field" placeholder="e.g. Abebe Kebede" required />
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-surface-100">
-                      {total.toLocaleString()} <span className="text-sm text-surface-400 font-normal">ETB</span>
-                    </p>
+                  <div>
+                    <label className="label-text flex items-center gap-1.5"><Phone size={13} /> Phone Number</label>
+                    <input value={form.guestPhone} onChange={(e) => setForm({ ...form, guestPhone: e.target.value })} className="input-field" placeholder="+251 9..." required />
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* ─── Dates ─── */}
+            <section>
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-7 h-7 rounded-lg bg-primary-500/15 flex items-center justify-center">
+                  <span className="text-primary-400 font-bold text-sm">3</span>
+                </div>
+                <h2 className="text-lg font-semibold text-surface-200">Choose dates</h2>
+              </div>
+
+              <div className="glass-card p-6 sm:p-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="label-text flex items-center gap-1.5"><CalendarDays size={13} /> Check-in</label>
+                    <input type="date" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} className="input-field" required />
+                  </div>
+                  <div>
+                    <label className="label-text flex items-center gap-1.5"><CalendarDays size={13} /> Check-out</label>
+                    <input type="date" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} className="input-field" required />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ─── Price Summary ─── */}
+            {total > 0 && (
+              <section className="animate-fade-in">
+                <div className="glass-card p-6 sm:p-8 border-accent-500/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-surface-400 mb-1">
+                        {nights} night{nights > 1 ? 's' : ''} · Room #{selectedRoom?.roomNumber} · {roomLabels[selectedRoom?.type] || selectedRoom?.type}
+                      </p>
+                      <p className="text-xs text-surface-500">
+                        {selectedRoom?.pricePerNight.toLocaleString()} ETB × {nights} night{nights > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-extrabold text-surface-100 tracking-tight">
+                        {total.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-surface-400 mt-0.5">ETB total</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-surface-700/30 flex items-center gap-2 text-xs text-green-400/80">
+                    <Shield size={12} />
+                    <span>Best rate guaranteed · No hidden charges · Pay securely with Chapa</span>
+                  </div>
+                </div>
+              </section>
             )}
 
+            {/* ─── Error ─── */}
             {error && (
-              <div className="px-4 py-3 rounded-xl bg-danger-500/10 border border-danger-500/30 text-red-400 text-sm animate-fade-in">
-                {error}
+              <div className="px-5 py-4 rounded-xl bg-red-500/8 border border-red-500/20 text-red-400 text-sm flex items-center gap-3 animate-fade-in">
+                <AlertCircle size={18} className="shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
-            <button type="submit" disabled={submitting} className="btn-accent w-full !py-3.5 text-base flex items-center justify-center gap-2 disabled:opacity-60">
+            {/* ─── Submit ─── */}
+            <button type="submit" disabled={submitting} className="btn-accent w-full !py-4 text-base font-semibold flex items-center justify-center gap-2.5 disabled:opacity-50 shadow-glow-accent hover:shadow-[0_0_30px_rgba(255,152,0,0.35)] transition-shadow duration-300">
               {submitting ? (
                 <><Loader2 size={18} className="animate-spin" /> Processing...</>
               ) : (
-                <>Confirm Booking <ArrowRight size={18} /></>
+                <><ArrowRight size={18} /> Confirm Booking</>
               )}
             </button>
+
+            {/* ─── Trust footer ─── */}
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-4 pb-8 text-xs text-surface-500">
+              <span className="flex items-center gap-1.5"><Shield size={13} /> Secure booking</span>
+              <span className="flex items-center gap-1.5"><Clock size={13} /> Instant confirmation</span>
+              <span className="flex items-center gap-1.5"><CreditCard size={13} /> Pay online or at hotel</span>
+            </div>
           </form>
         </div>
+
       ) : (
-        /* Success State */
-        <div className="relative z-10 max-w-md mx-auto px-6 pb-20 animate-scale-in">
-          <div className="glass-card p-10 text-center">
-            <div className="w-20 h-20 rounded-full bg-green-500/15 border-2 border-green-500/40 flex items-center justify-center mx-auto mb-6">
+        /* ─── Booking Confirmed → Pay ─── */
+        <div className="relative z-10 flex items-center justify-center min-h-[70vh] px-6 py-12">
+          <div className="glass-card max-w-md w-full p-10 text-center animate-scale-in">
+            <div className="w-20 h-20 rounded-full bg-green-500/10 border-2 border-green-500/30 flex items-center justify-center mx-auto mb-6">
               <CheckCircle size={36} className="text-green-400" />
             </div>
             <h2 className="text-2xl font-bold text-surface-100 mb-2">Booking Confirmed!</h2>
-            <p className="text-surface-400 mb-6">Thank you, {success.guestName}. Your reservation is confirmed.</p>
+            <p className="text-surface-400 text-sm mb-8">Thank you, {success.guestName}. Your reservation is confirmed.</p>
 
-            <div className="p-5 rounded-xl bg-surface-800/40 text-left space-y-3 mb-8">
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Room</span>
-                <span className="text-surface-200 font-mono">#{success.roomDetails?.roomNumber}</span>
+            <div className="rounded-xl bg-surface-800/50 border border-surface-700/30 divide-y divide-surface-700/20 text-left mb-8">
+              <div className="flex justify-between items-center px-5 py-3.5">
+                <span className="text-sm text-surface-400">Room</span>
+                <span className="text-sm text-surface-200 font-medium">#{success.roomDetails?.roomNumber}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Check-in</span>
-                <span className="text-surface-200">{new Date(success.checkIn).toLocaleDateString('en-US', { dateStyle: 'medium' })}</span>
+              <div className="flex justify-between items-center px-5 py-3.5">
+                <span className="text-sm text-surface-400">Check-in</span>
+                <span className="text-sm text-surface-200">{new Date(success.checkIn).toLocaleDateString('en-US', { dateStyle: 'medium' })}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-surface-400">Check-out</span>
-                <span className="text-surface-200">{new Date(success.checkOut).toLocaleDateString('en-US', { dateStyle: 'medium' })}</span>
+              <div className="flex justify-between items-center px-5 py-3.5">
+                <span className="text-sm text-surface-400">Check-out</span>
+                <span className="text-sm text-surface-200">{new Date(success.checkOut).toLocaleDateString('en-US', { dateStyle: 'medium' })}</span>
               </div>
-              <div className="flex justify-between text-sm pt-3 border-t border-surface-700/30">
-                <span className="text-surface-400 font-medium">Total</span>
-                <span className="text-surface-100 font-bold text-lg">{success.totalPrice?.toLocaleString()} ETB</span>
+              <div className="flex justify-between items-center px-5 py-4">
+                <span className="text-sm text-surface-400 font-medium">Total</span>
+                <span className="text-xl font-bold text-surface-100">{success.totalPrice?.toLocaleString()} <span className="text-sm font-normal text-surface-400">ETB</span></span>
               </div>
             </div>
 
             {error && (
-              <div className="px-4 py-3 mb-6 rounded-xl bg-danger-500/10 border border-danger-500/30 text-red-400 text-sm">
-                {error}
-              </div>
+              <div className="px-4 py-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
             )}
 
             <button 
               onClick={() => handlePay(success.id, null, success.guestPhone)} 
               disabled={paying}
-              className="btn-accent w-full mb-3 flex items-center justify-center gap-2 py-3.5"
+              className="btn-accent w-full mb-3 flex items-center justify-center gap-2.5 py-4 text-base font-semibold shadow-glow-accent hover:shadow-[0_0_30px_rgba(255,152,0,0.35)] transition-shadow duration-300"
             >
               {paying ? (
                 <><Loader2 size={16} className="animate-spin" /> Preparing Payment...</>
@@ -416,6 +532,8 @@ export default function PublicBooking() {
                 <><CreditCard size={16} /> Pay with Chapa Now</>
               )}
             </button>
+
+            <p className="text-xs text-surface-500 mb-4">Or pay at the property during check-in</p>
 
             <button onClick={resetForm} className="btn-ghost w-full">Book Another Room</button>
           </div>
