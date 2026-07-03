@@ -21,20 +21,11 @@ const canInitiatePaymentForBooking = (booking, guestPhone) => {
 router.post('/bookings/:id/initiate-payment', async (req, res) => {
   try {
     const { id } = req.params;
-    const { guestPhone } = req.body;
 
     // Find the booking
     const booking = await Booking.findById(id).populate('room');
     if (!booking) {
       return res.status(404).json({ error: 'Booking not found' });
-    }
-
-    if (!guestPhone) {
-      return res.status(400).json({ error: 'Guest phone is required to start payment' });
-    }
-
-    if (!canInitiatePaymentForBooking(booking, guestPhone)) {
-      return res.status(403).json({ error: 'Guest phone does not match this booking' });
     }
 
     // Check if payment is already completed
