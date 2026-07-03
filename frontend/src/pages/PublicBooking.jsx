@@ -29,27 +29,34 @@ export default function PublicBooking() {
     window.addEventListener('unhandledrejection', handleRejection);
 
     const queryParams = new URLSearchParams(window.location.search);
-    const txRef = queryParams.get('trx_ref');
+    const txRefFromUrl = queryParams.get('trx_ref') || queryParams.get('tx_ref') || queryParams.get('txRef');
+    const isPaymentReturn = queryParams.get('status') === 'payment-return' || Boolean(txRefFromUrl);
     
     // Parse bookingId out of txRef if custom parameters were stripped by Chapa redirect
     let bookingId = queryParams.get('bookingId');
-    if (txRef && !bookingId && txRef.startsWith('booking-')) {
-      const parts = txRef.split('-');
+    if (txRefFromUrl && !bookingId && txRefFromUrl.startsWith('booking-')) {
+      const parts = txRefFromUrl.split('-');
       if (parts[1]) {
         bookingId = parts[1];
       }
     }
 
-    if (txRef && bookingId) {
+    if (isPaymentReturn && bookingId) {
       setCheckingPayment(true);
       // Wait 1.5 seconds for webhook to process, then verify status
       setTimeout(async () => {
         try {
+          const bookingBeforeVerify = await getPublicBooking(bookingId);
+          const txRef = txRefFromUrl || bookingBeforeVerify.chapaReference;
+
           try {
-            await verifyPayment(txRef);
+            if (txRef) {
+              await verifyPayment(txRef);
+            }
           } catch (err) {
             console.warn('Manual verification error:', err);
           }
+
           const booking = await getPublicBooking(bookingId);
           setPaymentReturn(booking);
         } catch (err) {
@@ -109,7 +116,6 @@ export default function PublicBooking() {
   };
 
   const handlePay = async (bookingId, email, guestPhone) => {
-    alert("DEBUG: sending guestPhone = " + guestPhone + " for booking " + bookingId);
     setPaying(true);
     setError('');
     try {
